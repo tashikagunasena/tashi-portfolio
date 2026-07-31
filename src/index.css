@@ -109,7 +109,6 @@ body {
     }
   }
 
-  /* Mobile dock - visible only on small screens */
   /* Mobile dock — a floating glass pill, not a full-width tab bar */
   #mobile-dock {
     @apply fixed inset-x-0 bottom-0 z-50 flex justify-center px-4 sm:hidden pointer-events-none;

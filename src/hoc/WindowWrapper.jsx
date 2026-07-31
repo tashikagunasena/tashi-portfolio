@@ -1,13 +1,23 @@
 import useWindowStore from "#store/window.js";
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { Draggable } from "gsap/Draggable";
 
 gsap.registerPlugin(Draggable);
 
-// Keep in sync with the `sm:` breakpoint used across index.css.
 const MOBILE_QUERY = "(max-width: 640px)";
+
+// This app never scrolls the page (html/body/main are overflow:hidden), so a
+// non-zero scroll offset there is always a stray value — and because windows
+// are absolutely positioned inside that container, any stray horizontal scroll
+// silently slides every window off-center. Reset it.
+const clearPageScroll = () => {
+  const main = document.querySelector("main");
+  if (main) main.scrollLeft = main.scrollTop = 0;
+  document.documentElement.scrollLeft = document.documentElement.scrollTop = 0;
+  document.body.scrollLeft = document.body.scrollTop = 0;
+};
 
 const WindowWrapper = (Component, windowKey) => {
   const Wrapped = (props) => {
@@ -16,91 +26,95 @@ const WindowWrapper = (Component, windowKey) => {
     const ref = useRef(null);
     const draggableRef = useRef(null);
 
-    // Places the window for the CURRENT viewport and returns the coords.
-    // offset* reads the layout box (transforms ignored), so this math
-    // works regardless of what the stylesheet says.
     const placeWindow = () => {
       const el = ref.current;
-      if (!el) return null;
+      if (!el) return;
+
+      // Kill any stray page scroll BEFORE we measure or place — see above.
+      clearPageScroll();
 
       gsap.set(el, { x: 0, y: 0 });
 
       const isMobile = window.matchMedia(MOBILE_QUERY).matches;
-      const x = (window.innerWidth - el.offsetWidth) / 2 - el.offsetLeft;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      const left = el.offsetLeft;
+      const top = el.offsetTop;
+
+      const x = (window.innerWidth - w) / 2 - left;
       let y;
 
       if (isMobile) {
-        // Mobile: windows act as bottom sheets, pinned just above the
-        // mobile dock instead of floating dead-center over it.
+        // Center inside the area ABOVE the dock so the dock is never covered.
         const dock = document.querySelector("#mobile-dock");
-        const gap = (dock?.offsetHeight ?? 72) + 12;
-        y = window.innerHeight - el.offsetHeight - gap - el.offsetTop;
-        // Sheets taller than the available space pin 12px from the top
-        // so the header and close button stay reachable.
-        y = Math.max(y, 12);
+        const dockH = dock ? dock.offsetHeight : 0;
+        const stageTop = 12;
+        const stageBottom = window.innerHeight - dockH - 8;
+        const stageH = Math.max(stageBottom - stageTop, 0);
+
+        const centerY = stageTop + (stageH - h) / 2;
+        const minY = stageTop - top;
+        const maxY = stageBottom - h - top;
+        y = minY > maxY ? minY : Math.min(Math.max(centerY - top, minY), maxY);
       } else {
-        // Desktop: dead-center, clamped 16px from the top for windows
-        // taller than the viewport.
-        y =
-          Math.max((window.innerHeight - el.offsetHeight) / 2, 16) -
-          el.offsetTop;
+        y = Math.max((window.innerHeight - h) / 2, 16) - top;
       }
 
       gsap.set(el, { x, y, transformOrigin: "center center" });
-      return { x, y };
     };
 
-    // --- OPEN/CLOSE: visibility + placement, all before paint ---
+    // --- OPEN/CLOSE ---
     useLayoutEffect(() => {
       const el = ref.current;
       if (!el) return;
 
-      // "" (not "block") — an inline `display: block` would squash the
-      // stylesheet's `display: flex` that the mobile layouts rely on.
-      el.style.display = isOpen ? "" : "none";
+      el.style.display = isOpen ? "" : "none"; // "" so CSS flex layouts live
       if (!isOpen) return;
 
-      // Kill any tween still mid-flight so it can't fight the re-open.
       gsap.killTweensOf(el);
+      placeWindow();
 
-      const pos = placeWindow();
-      const isMobile = window.matchMedia(MOBILE_QUERY).matches;
+      gsap.fromTo(
+        el,
+        { opacity: 0, scale: 0.9 },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.32,
+          ease: "back.out(1.4)",
+          onComplete: () => draggableRef.current?.update(),
+        },
+      );
+    }, [isOpen]);
 
-      if (isMobile) {
-        // Sheets slide up from the dock — x stays put, only y moves.
-        gsap.fromTo(
-          el,
-          { opacity: 0, y: pos.y + 72, scale: 1 },
-          { opacity: 1, y: pos.y, scale: 1, duration: 0.4, ease: "power3.out" },
-        );
-      } else {
-        // Flourish uses ONLY opacity + scale — never x or y — so the
-        // entrance animation can't nudge the window off center.
-        gsap.fromTo(
-          el,
-          { opacity: 0, scale: 0.88 },
-          {
-            opacity: 1,
-            scale: 1,
-            duration: 0.35,
-            ease: "back.out(1.5)",
-            onComplete: () => draggableRef.current?.update(),
-          },
-        );
-      }
+    // --- STAY CENTERED on mobile when the box changes size ---
+    useEffect(() => {
+      const el = ref.current;
+      if (!el || !isOpen) return;
 
-      // Re-place on rotation / resize / breakpoint crossing while open.
+      let raf = 0;
+      const ro = new ResizeObserver(() => {
+        if (!window.matchMedia(MOBILE_QUERY).matches) return;
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(placeWindow);
+      });
+      ro.observe(el);
+
       const onResize = () => {
         gsap.killTweensOf(el);
         placeWindow();
         draggableRef.current?.update();
       };
       window.addEventListener("resize", onResize);
-      return () => window.removeEventListener("resize", onResize);
+
+      return () => {
+        cancelAnimationFrame(raf);
+        ro.disconnect();
+        window.removeEventListener("resize", onResize);
+      };
     }, [isOpen]);
 
-    // --- DRAG: desktop only. On touch, Draggable would swallow the very
-    // gestures the gallery needs to scroll, so sheets stay put instead. ---
+    // --- DRAG: desktop only ---
     useGSAP(() => {
       const el = ref.current;
       if (!el) return;

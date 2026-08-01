@@ -1,16 +1,129 @@
+import { useState, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import dayjs from "dayjs";
 import { navIcons, navLinks } from "#constants";
 import useWindowStore from "#store/window";
 
+/* tiny self‑ticking clock so the bar / menu feel alive without re‑rendering siblings */
+const LiveTime = ({ format, className }) => {
+  const [now, setNow] = useState(() => dayjs());
+  useState(() => {
+    const t = setInterval(() => setNow(dayjs()), 1000);
+    LiveTime._t = t;
+  });
+  return <time className={className}>{now.format(format)}</time>;
+};
+
+const glyphFor = (type) => {
+  const common = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    className: "size-5",
+  };
+  switch (type) {
+    case "finder":
+      return (
+        <svg {...common}>
+          <rect x="4" y="3" width="16" height="18" rx="3" />
+          <path d="M12 3v18M9 9h.01M15 9h.01" />
+          <path d="M9.5 14a3 3 0 0 0 5 0" />
+        </svg>
+      );
+    case "safari":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M15.5 8.5l-2 5-5 2 2-5 5-2z" />
+        </svg>
+      );
+    case "photos":
+      return (
+        <svg {...common}>
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <circle cx="9" cy="9" r="1.6" />
+          <path d="M21 15l-5-5L5 21" />
+        </svg>
+      );
+    case "contact":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="8" r="3.2" />
+          <path d="M5 20a7 7 0 0 1 14 0" />
+        </svg>
+      );
+    case "terminal":
+      return (
+        <svg {...common}>
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M7 9l3 3-3 3M13 15h4" />
+        </svg>
+      );
+    case "resume":
+    case "txt":
+      return (
+        <svg {...common}>
+          <path d="M7 3h7l4 4v14H7z" />
+          <path d="M14 3v4h4M9 12h6M9 16h4" />
+        </svg>
+      );
+    default:
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      );
+  }
+};
+
+const Chevron = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="size-4"
+  >
+    <path d="M9 6l6 6-6 6" />
+  </svg>
+);
+
 const Navbar = () => {
   const { openWindow } = useWindowStore();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const navRef = useRef(null);
+  const [anchorTop, setAnchorTop] = useState(0);
+
+  useLayoutEffect(() => {
+    if (!menuOpen) return;
+    const measure = () => {
+      const r = navRef.current?.getBoundingClientRect();
+      setAnchorTop(r ? Math.round(r.bottom) : 0);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+    };
+  }, [menuOpen]);
+
+  const handleNav = (type) => {
+    openWindow(type);
+    setMenuOpen(false);
+  };
 
   return (
-    <nav>
-      <div>
+    <nav ref={navRef}>
+      <div className="nav-left">
         <img src="/images/logo.svg" alt="logo" />
         <p className="font-bold">Adrian's Portfolio</p>
-
         <ul>
           {navLinks.map(({ id, name, type }) => (
             <li key={id} onClick={() => openWindow(type)}>
@@ -20,7 +133,7 @@ const Navbar = () => {
         </ul>
       </div>
 
-      <div>
+      <div className="nav-right">
         <ul>
           {navIcons.map(({ id, img }) => (
             <li key={id}>
@@ -28,9 +141,86 @@ const Navbar = () => {
             </li>
           ))}
         </ul>
-
-        <time>{dayjs().format("ddd MMM D h:mm A")}</time>
+        <LiveTime format="ddd MMM D · h:mm A" />
       </div>
+
+      <button
+        id="mobile-nav-toggle"
+        aria-label={menuOpen ? "Close menu" : "Open menu"}
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen((v) => !v)}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          className={`absolute inset-0 m-auto size-6 transition-all duration-300 ${menuOpen ? "rotate-90 scale-50 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
+        >
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          className={`absolute inset-0 m-auto size-6 transition-all duration-300 ${menuOpen ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-50 opacity-0"}`}
+        >
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
+
+      {menuOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <button
+              id="mobile-nav-backdrop"
+              aria-label="Close menu"
+              style={{ top: anchorTop }}
+              onClick={() => setMenuOpen(false)}
+            />
+            <div
+              id="mobile-nav-menu"
+              style={{ top: anchorTop }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation"
+            >
+              <div className="menu-head">
+                <span className="mh-title">Menu</span>
+                <span className="mh-hint">tap outside to close</span>
+              </div>
+              <ul>
+                {navLinks.map(({ id, name, type }, i) => (
+                  <li
+                    key={id}
+                    style={{ animationDelay: `${0.05 + i * 0.045}s` }}
+                  >
+                    <button
+                      className="link-row"
+                      onClick={() => handleNav(type)}
+                    >
+                      <span className="link-glyph">{glyphFor(type)}</span>
+                      <span className="link-name">{name}</span>
+                      <span className="link-chev">
+                        <Chevron />
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="menu-foot">
+                <span className="dot" />
+                <LiveTime format="ddd MMM D · h:mm:ss A" />
+                <span className="mf-build">React · GSAP · Tailwind</span>
+              </div>
+            </div>
+          </>,
+          document.body,
+        )}
     </nav>
   );
 };

@@ -19,13 +19,15 @@ const TxtFile = () => {
 
       <div className="p-4 overflow-auto h-full">
         {image && (
-          <img src={image} alt={name} className="w-full h-48 object-cover rounded mb-4" />
+          <img
+            src={image}
+            alt={name}
+            className="w-full h-48 object-cover rounded mb-4"
+          />
         )}
-        
-        {subtitle && (
-          <h3 className="text-lg font-semibold mb-2">{subtitle}</h3>
-        )}
-        
+
+        {subtitle && <h3 className="text-lg font-semibold mb-2">{subtitle}</h3>}
+
         {description && Array.isArray(description) && (
           <div className="space-y-3">
             {description.map((paragraph, index) => (

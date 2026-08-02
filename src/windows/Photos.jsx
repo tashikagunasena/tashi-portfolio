@@ -8,7 +8,10 @@ const Photos = () => {
   const { openWindow } = useWindowStore();
 
   const handleImageClick = (image) => {
-    openWindow("imgfile", { name: image.img.split("/").pop(), imageUrl: image.img });
+    openWindow("imgfile", {
+      name: image.img.split("/").pop(),
+      imageUrl: image.img,
+    });
   };
 
   return (

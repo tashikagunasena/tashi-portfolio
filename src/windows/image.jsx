@@ -18,9 +18,7 @@ const ImgFile = () => {
       </div>
 
       <div className="preview">
-        {imageUrl && (
-          <img src={imageUrl} alt={name} />
-        )}
+        {imageUrl && <img src={imageUrl} alt={name} />}
       </div>
     </>
   );

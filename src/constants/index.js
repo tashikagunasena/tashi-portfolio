@@ -188,19 +188,19 @@ const photosLinks = [
 const gallery = [
   {
     id: 1,
-    img: "/images/gal1.png",
+    img: "/images/human.jpg",
   },
   {
     id: 2,
-    img: "/images/gal2.png",
+    img: "/images/pfp.webp",
   },
   {
     id: 3,
-    img: "/images/gal3.png",
+    img: "/images/space.jpg",
   },
   {
     id: 4,
-    img: "/images/gal4.png",
+    img: "/images/gal2.png",
   },
 ];
 
@@ -397,7 +397,7 @@ const ABOUT_LOCATION = {
       kind: "file",
       fileType: "img",
       position: "top-10 left-5",
-      imageUrl: "/images/adrian.jpg",
+      imageUrl: "/images/human.jpg",
     },
     {
       id: 2,
@@ -406,7 +406,7 @@ const ABOUT_LOCATION = {
       kind: "file",
       fileType: "img",
       position: "top-28 right-72",
-      imageUrl: "/images/adrian-2.jpg",
+      imageUrl: "/images/pfp.webp",
     },
     {
       id: 3,
@@ -415,7 +415,7 @@ const ABOUT_LOCATION = {
       kind: "file",
       fileType: "img",
       position: "top-52 left-80",
-      imageUrl: "/images/adrian-3.jpeg",
+      imageUrl: "/images/space.jpg",
     },
     {
       id: 4,
@@ -425,7 +425,7 @@ const ABOUT_LOCATION = {
       fileType: "txt",
       position: "top-60 left-5",
       subtitle: "Meet the Developer Behind the Code",
-      image: "/images/adrian.jpg",
+      image: "/images/human.jpg",
       description: [
         "Hey! I’m Tashi 👋, a web developer who enjoys building sleek, interactive websites that actually work well.",
         "I specialize in JavaScript, React, and Next.js—and I love making things feel smooth, fast, and just a little bit delightful.",

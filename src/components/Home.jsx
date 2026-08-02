@@ -8,11 +8,10 @@ const projects = locations.work?.children ?? [];
 
 /* ✏️ Edit your hero copy in one place. Paste your own bio into `tagline`. */
 const HERO = {
-  kicker: "Hey, I'm Adrian",
-  line: "Welcome to my",
+  line: "HI, Welcome to my",
   wordmark: "portfolio",
   tagline:
-    "Designer‑developer crafting playful, desktop‑grade interfaces for the web.",
+    "I'm Tashi. A web dev in sri lanka. Do be aware in order to get the full MacOS experiance view this porfolio in a larger screen",
 };
 
 const Ticker = ({ format, className }) => {

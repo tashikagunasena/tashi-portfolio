@@ -123,7 +123,7 @@ const Navbar = () => {
     <nav ref={navRef}>
       <div className="nav-left">
         <img src="/images/logo.svg" alt="logo" />
-        <p className="font-bold">Adrian's Portfolio</p>
+        <p className="font-bold">Tashi's Portfolio</p>
         <ul>
           {navLinks.map(({ id, name, type }) => (
             <li key={id} onClick={() => openWindow(type)}>

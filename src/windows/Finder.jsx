@@ -12,7 +12,14 @@ const Finder = () => {
   const { activeLocation, setActiveLocation } = useLocationStore();
   const sidebarRef = useRef(null);
 
-  // Keep the active pill in view on the horizontal mobile rail — by scrolling
+  // ids repeat ACROSS the two sidebar lists (Favorites reuses 1,2,3… and so
+  // does Work), so an id-only check lights up two pills at once. Match the
+  // item itself instead — exactly one pill can ever be active.
+  const isActive = (item) =>
+    item === activeLocation ||
+    (item.id === activeLocation?.id && item.name === activeLocation?.name);
+
+  // Keep the active pill centered on the horizontal mobile rail — by scrolling
   // the rail ONLY. (scrollIntoView would also nudge overflow:hidden ancestors
   // like <main>, which slides the absolutely-positioned window sideways.)
   useEffect(() => {
@@ -27,10 +34,11 @@ const Finder = () => {
       (activeRect.left - railRect.left) -
       (railRect.width - activeRect.width) / 2;
     rail.scrollTo({ left: Math.max(0, center), behavior: "smooth" });
-  }, [activeLocation?.id]);
+    // depend on the whole object, not just id — two different folders can
+    // share an id, and the rail must re-center on every real change
+  }, [activeLocation]);
 
   const openItem = (item) => {
-    // 👇 the fix: hand the clicked file to the resume window
     if (item.fileType === "pdf") return openWindow("resume", item);
     if (item.kind === "folder") return setActiveLocation(item);
     if (["fig", "url"].includes(item.fileType) && item.href)
@@ -46,9 +54,7 @@ const Finder = () => {
           <li
             key={item.id}
             onClick={() => setActiveLocation(item)}
-            className={clsx(
-              item.id === activeLocation.id ? "active" : "not-active",
-            )}
+            className={clsx(isActive(item) ? "active" : "not-active")}
           >
             <img src={item.icon} className="w-4" alt={item.name} />
             <p className="text-sm font-medium truncate">{item.name}</p>

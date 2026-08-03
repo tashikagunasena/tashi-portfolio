@@ -455,6 +455,43 @@ const RESUME_LOCATION = {
   ],
 };
 
+const CERTIFICATIONS_LOCATION = {
+  id: 5,
+  type: "certifications",
+  name: "Certifications",
+  icon: "/icons/file.svg",
+  kind: "folder",
+  children: [
+    {
+      id: 1,
+      name: "CS50 Certificate.pdf",
+      icon: "/images/pdf.png",
+      kind: "file",
+      fileType: "pdf",
+      href: "/files/cs50.pdf",
+      position: "top-10 left-5",
+    },
+    {
+      id: 2,
+      name: "JavaScript Advanced.pdf",
+      icon: "/images/pdf.png",
+      kind: "file",
+      fileType: "pdf",
+      href: "/files/cs50.pdf",
+      position: "top-10 left-52",
+    },
+    {
+      id: 3,
+      name: "Node.js Backend.pdf",
+      icon: "/images/pdf.png",
+      kind: "file",
+      fileType: "pdf",
+      href: "/files/cs50.pdf",
+      position: "top-10 left-[25rem]",
+    },
+  ],
+};
+
 const TRASH_LOCATION = {
   id: 4,
   type: "trash",
@@ -487,6 +524,7 @@ export const locations = {
   work: WORK_LOCATION,
   about: ABOUT_LOCATION,
   resume: RESUME_LOCATION,
+  certifications: CERTIFICATIONS_LOCATION,
   trash: TRASH_LOCATION,
 };
 

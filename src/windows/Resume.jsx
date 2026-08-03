@@ -5,6 +5,7 @@ import { Download, FileWarning } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
+import useWindowStore from "#store/window";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -13,11 +14,40 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 const MOBILE_QUERY = "(max-width: 640px)";
 
+/* One PDF viewer for every pdf in the Finder — resume AND certifications.
+   Which file it shows comes from the window's `data`. */
 const Resume = () => {
-  const bodyRef = useRef(null);
+  const { windows } = useWindowStore();
+  const data = windows?.resume?.data;
 
-  // Read the initial value during render (lazy initializer) so the very first
-  // paint already knows the viewport class — no flash, no effect needed for it.
+  const fileSrc = data?.href || "files/resume.pdf";
+  const fileName = data?.name || "Resume.pdf";
+
+  return (
+    <>
+      <div id="window-header">
+        <WindowControls target="resume" />
+        <h2>{fileName}</h2>
+        <a
+          href={fileSrc}
+          download
+          className="resume-download"
+          title={`Download ${fileName}`}
+        >
+          <Download className="size-4" />
+          <span>Save</span>
+        </a>
+      </div>
+
+      {/* key = file path: switching PDFs remounts the sheet, resetting
+          loading / error / sizing state with no effects needed */}
+      <PdfSheet key={fileSrc} fileSrc={fileSrc} fileName={fileName} />
+    </>
+  );
+};
+
+const PdfSheet = ({ fileSrc, fileName }) => {
+  const bodyRef = useRef(null);
   const [isMobile, setIsMobile] = useState(
     () =>
       typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches,
@@ -26,8 +56,6 @@ const Resume = () => {
   const [numPages, setNumPages] = useState(null);
   const [errored, setErrored] = useState(false);
 
-  // Effect now ONLY subscribes to future changes; setState lives in the
-  // callback, never in the effect body.
   useEffect(() => {
     const mq = window.matchMedia(MOBILE_QUERY);
     const onChange = () => setIsMobile(mq.matches);
@@ -35,15 +63,10 @@ const Resume = () => {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  // On mobile, rasterize the page at the scroll body's content width.
-  // On desktop we simply opt out — no setState here, the render already
-  // branches on `isMobile`, so a stale pageWidth is never read.
   useEffect(() => {
     if (!isMobile) return;
-
     const el = bodyRef.current;
     if (!el) return;
-
     const measure = () => {
       const cs = getComputedStyle(el);
       const w =
@@ -53,7 +76,6 @@ const Resume = () => {
       const next = Math.max(0, Math.floor(w));
       setPageWidth((prev) => (prev !== next ? next : prev));
     };
-
     const raf = requestAnimationFrame(measure);
     const ro =
       typeof ResizeObserver !== "undefined"
@@ -62,7 +84,6 @@ const Resume = () => {
     ro?.observe(el);
     window.addEventListener("resize", measure);
     window.addEventListener("orientationchange", measure);
-
     return () => {
       cancelAnimationFrame(raf);
       ro?.disconnect();
@@ -76,50 +97,34 @@ const Resume = () => {
   const canRenderPage = !isMobile || !!pageWidth;
 
   return (
-    <>
-      <div id="window-header">
-        <WindowControls target="resume" />
-        <h2>Resume.pdf</h2>
-        <a
-          href="files/resume.pdf"
-          download
-          className="resume-download"
-          title="Download resume"
+    <div className="resume-scroll" ref={bodyRef}>
+      {showSkeleton && <ResumeSkeleton />}
+
+      {!errored ? (
+        <Document
+          file={fileSrc}
+          loading={null}
+          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+          onLoadError={() => setErrored(true)}
         >
-          <Download className="size-4" />
-          <span>Save</span>
-        </a>
-      </div>
+          {canRenderPage && (
+            <Page
+              pageNumber={1}
+              renderTextLayer
+              renderAnnotationLayer
+              loading={null}
+              {...(isMobile ? { width: pageWidth } : { scale: 1 })}
+            />
+          )}
+        </Document>
+      ) : (
+        <ResumeError fileSrc={fileSrc} fileName={fileName} />
+      )}
 
-      <div className="resume-scroll" ref={bodyRef}>
-        {showSkeleton && <ResumeSkeleton />}
-
-        {!errored ? (
-          <Document
-            file="files/resume.pdf"
-            loading={null}
-            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-            onLoadError={() => setErrored(true)}
-          >
-            {canRenderPage && (
-              <Page
-                pageNumber={1}
-                renderTextLayer
-                renderAnnotationLayer
-                loading={null}
-                {...(isMobile ? { width: pageWidth } : { scale: 1 })}
-              />
-            )}
-          </Document>
-        ) : (
-          <ResumeError />
-        )}
-
-        {loaded && numPages > 1 && (
-          <p className="resume-pages">Showing page 1 of {numPages}</p>
-        )}
-      </div>
-    </>
+      {loaded && numPages > 1 && (
+        <p className="resume-pages">Showing page 1 of {numPages}</p>
+      )}
+    </div>
   );
 };
 
@@ -136,14 +141,14 @@ const ResumeSkeleton = () => (
   </div>
 );
 
-const ResumeError = () => (
+const ResumeError = ({ fileSrc, fileName }) => (
   <div className="resume-error">
     <FileWarning className="size-7" />
     <p className="title">Couldn't render the PDF</p>
     <p className="sub">The preview didn't load — grab a local copy instead.</p>
-    <a href="files/resume.pdf" download className="resume-download solid">
+    <a href={fileSrc} download className="resume-download solid">
       <Download className="size-4" />
-      <span>Download resume</span>
+      <span>Download {fileName}</span>
     </a>
   </div>
 );

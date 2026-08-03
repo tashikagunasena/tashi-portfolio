@@ -20,19 +20,18 @@ const Finder = () => {
     const active = rail?.querySelector(".active");
     if (!rail || !active) return;
     if (!window.matchMedia("(max-width: 640px)").matches) return;
-
     const railRect = rail.getBoundingClientRect();
     const activeRect = active.getBoundingClientRect();
     const center =
       rail.scrollLeft +
       (activeRect.left - railRect.left) -
       (railRect.width - activeRect.width) / 2;
-
     rail.scrollTo({ left: Math.max(0, center), behavior: "smooth" });
   }, [activeLocation?.id]);
 
   const openItem = (item) => {
-    if (item.fileType === "pdf") return openWindow("resume");
+    // 👇 the fix: hand the clicked file to the resume window
+    if (item.fileType === "pdf") return openWindow("resume", item);
     if (item.kind === "folder") return setActiveLocation(item);
     if (["fig", "url"].includes(item.fileType) && item.href)
       return window.open(item.href, "_blank");

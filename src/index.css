@@ -488,6 +488,16 @@ body {
 
   #photos {
     @apply max-w-3xl absolute bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
+    /* Desktop: a definite height is what makes the 1fr masonry rows divide
+     evenly. Without it, rows fall back to content height and portrait
+     uploads blow the grid up. */
+    @apply flex flex-col h-[34rem] max-h-[calc(100dvh-6rem)];
+
+    /* body under the header fills the remaining height */
+    & > div:last-child {
+      @apply flex-1 min-h-0;
+    }
+
     .sidebar {
       @apply w-3/12 flex-none bg-gray-50 border-r border-gray-200 flex flex-col p-5;
       h2 {
@@ -508,11 +518,13 @@ body {
         }
       }
     }
+
     .gallery {
-      @apply p-5;
+      @apply p-5 flex-1 min-w-0 h-full;
       ul {
-        @apply grid grid-cols-5 grid-rows-5 gap-2.5;
+        @apply grid grid-cols-5 grid-rows-5 auto-rows-fr gap-2.5 h-full;
         li {
+          @apply overflow-hidden rounded-lg;
           img {
             @apply size-full object-cover rounded-lg;
           }
@@ -531,8 +543,10 @@ body {
         }
       }
     }
+
+    /* ---- Mobile: the bottom sheet that already works, kept as-is ---- */
     @media (max-width: 640px) {
-      @apply w-[95vw] max-h-[72dvh] flex flex-col;
+      @apply w-[95vw] h-auto max-h-[72dvh];
       & > div:last-child {
         @apply h-auto flex-1 min-h-0 flex-col;
       }
@@ -556,9 +570,9 @@ body {
         }
       }
       .gallery {
-        @apply flex-1 min-h-0 overflow-y-auto overscroll-contain p-3;
+        @apply flex-1 min-h-0 h-auto overflow-y-auto overscroll-contain p-3;
         ul {
-          @apply grid-cols-2 grid-rows-none gap-2;
+          @apply h-auto grid-cols-2 grid-rows-none auto-rows-auto gap-2;
           li {
             img {
               @apply aspect-square h-auto;
@@ -834,6 +848,93 @@ body {
         }
       }
     }
+  }
+}
+
+/* ---------- Desktop widgets: right side, macOS-style 2-up grid ---------- */
+#widgets {
+  @apply absolute right-3 top-5 z-10 grid w-[19rem] grid-cols-2 gap-3 select-none max-sm:hidden;
+
+  .widget {
+    @apply cursor-grab active:cursor-grabbing min-w-0;
+    animation: widget-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .widget:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  .widget:nth-child(3) {
+    @apply col-span-2; /* photo becomes a medium widget */
+    animation-delay: 0.16s;
+  }
+
+  .widget-card {
+    @apply h-full w-full overflow-hidden rounded-[1.4rem];
+    @apply shadow-lg shadow-black/20 ring-1 ring-black/5;
+    @apply transition-shadow duration-300 hover:shadow-2xl hover:shadow-black/30;
+  }
+
+  /* small widget: calendar */
+  .cal {
+    @apply bg-white/95 p-3;
+  }
+  .cal-month {
+    @apply text-[7px] font-semibold uppercase tracking-[0.18em] text-red-500;
+  }
+  .cal-grid {
+    @apply mt-1.5 grid grid-cols-7 gap-y-1 text-center;
+  }
+  .cal-dow {
+    @apply text-[9px] font-medium text-gray-400;
+  }
+  .cal-date {
+    @apply mx-auto grid size-3 place-items-center rounded-full text-[9px] tabular-nums text-gray-700;
+  }
+  .cal-date.today {
+    @apply bg-red-500 font-semibold text-white;
+  }
+
+  /* small widget: weather — stretches to match the calendar's height */
+  .weather {
+    background: linear-gradient(165deg, #5b8bd9 0%, #3a6bc4 45%, #274ea0 100%);
+    @apply p-3 text-white;
+    .w-city {
+      @apply text-xs font-semibold;
+    }
+    .w-temp {
+      @apply mt-0.5 text-2xl font-light tabular-nums;
+    }
+    .w-foot {
+      @apply mt-2 flex flex-col gap-0.5 text-[9px] text-white/85;
+    }
+  }
+
+  /* medium widget: photo spans both columns */
+  .photo {
+    @apply relative block h-36 w-full cursor-pointer;
+    img {
+      @apply size-full object-cover;
+      animation: widget-kenburns 14s ease-in-out infinite alternate;
+    }
+    .photo-tag {
+      @apply absolute bottom-2 left-3 text-[11px] font-roboto uppercase tracking-[0.2em] text-white/90;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    }
+  }
+}
+
+/* keep these only if they're not already in your file from last time */
+@keyframes widget-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+}
+@keyframes widget-kenburns {
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.12) translate(2%, -2%);
   }
 }
 

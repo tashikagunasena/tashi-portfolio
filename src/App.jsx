@@ -1,7 +1,7 @@
 import gsap from "gsap";
 import { Draggable } from "gsap/Draggable";
 
-import { Dock, Navbar, Welcome, Home, MobileDock } from "#components";
+import { Dock, Navbar, Welcome, Home, MobileDock,  } from "#components";
 import {
   Finder,
   Resume,

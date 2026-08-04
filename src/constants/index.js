@@ -200,7 +200,7 @@ const gallery = [
   },
   {
     id: 4,
-    img: "/images/gal2.png",
+    img: "/images/carousel.jpg",
   },
 ];
 
@@ -225,7 +225,7 @@ const WORK_LOCATION = {
     // ▶ Project 1
     {
       id: 5,
-      name: "Nike Ecommerce App",
+      name: "Cake shop website",
       icon: "/images/folder.png",
       kind: "folder",
       position: "top-10 left-5", // icon position inside Finder
@@ -233,30 +233,32 @@ const WORK_LOCATION = {
       children: [
         {
           id: 1,
-          name: "Nike Project.txt",
+          name: "Cake project.txt",
           icon: "/images/txt.png",
           kind: "file",
           fileType: "txt",
           position: "top-5 left-10",
           description: [
-            "The Nike eCommerce website is a sleek and modern platform designed for shopping the latest Nike collections.",
-            "Instead of a simple online store, it delivers an immersive experience with bold visuals, interactive product displays, and smooth navigation.",
-            "Think of it like walking into a flagship Nike store—but right from your phone or laptop.",
-            "It's built with Next.js and Tailwind, ensuring fast performance, responsive design, and a clean, premium look.",
+            "Fully responsive cake website (Mobile First Methodology)",
+            "Clear and semantic HTML structure.",
+            "Use of CSS variables and modern JavaScript functions.",
+            "Smooth scrolling between sections.",
+            "Scroll animations.",
+            "Compatible with all modern browsers and devices.",
           ],
         },
         {
           id: 2,
-          name: "nike.com",
+          name: "cake.com",
           icon: "/images/safari.png",
           kind: "file",
           fileType: "url",
-          href: "https://youtu.be/fZdTYswuZjU?si=Awjl-pIst9e09_UU",
+          href: "https://jix-baked.tashikamethum.workers.dev/",
           position: "top-10 right-20",
         },
         {
           id: 4,
-          name: "nike.png",
+          name: "cake.png",
           icon: "/images/image.png",
           kind: "file",
           fileType: "img",

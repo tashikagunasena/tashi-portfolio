@@ -299,7 +299,7 @@ const WORK_LOCATION = {
         },
         {
           id: 2,
-          name: "ai-resume-analyzer.com",
+          name: "furniture.com",
           icon: "/images/safari.png",
           kind: "file",
           fileType: "url",
@@ -308,7 +308,7 @@ const WORK_LOCATION = {
         },
         {
           id: 4,
-          name: "ai-resume-analyzer.png",
+          name: "furniture.png",
           icon: "/images/image.png",
           kind: "file",
           fileType: "img",

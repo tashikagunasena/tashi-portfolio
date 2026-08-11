@@ -1,222 +1,160 @@
+import { useState } from "react";
 import { WindowControls } from "#components";
 import WindowWrapper from "#hoc/WindowWrapper.jsx";
-import useWindowStore from "#store/window.js";
 import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  Shuffle,
-  Repeat,
-  Heart,
-  MoreHorizontal,
-  Music as MusicIcon,
+  Play, Pause, SkipBack, SkipForward, Shuffle, Repeat,
+  Music2, ListMusic, Heart, Clock, Search, User, Disc3, Radio, Volume2
 } from "lucide-react";
-import { useState } from "react";
 
-const SPOTIFY_URL =
-  import.meta.env.VITE_SPOTIFY_URL ??
-  "https://spotify-clone-xi-one-47.vercel.app";
-
-const sampleTracks = [
-  {
-    id: 1,
-    title: "Midnight Dreams",
-    artist: "Luna Wave",
-    duration: "3:45",
-    cover: "/images/music1.jpg",
-  },
-  {
-    id: 2,
-    title: "Electric Sunset",
-    artist: "Neon Pulse",
-    duration: "4:12",
-    cover: "/images/music2.jpg",
-  },
-  {
-    id: 3,
-    title: "Ocean Breeze",
-    artist: "Coastal Vibes",
-    duration: "3:28",
-    cover: "/images/music3.jpg",
-  },
-  {
-    id: 4,
-    title: "Urban Jungle",
-    artist: "City Beats",
-    duration: "3:56",
-    cover: "/images/music4.jpg",
-  },
+const tracks = [
+  { id: 1, title: "Neon Nights", artist: "Synthwave Collective", album: "Retrowave", duration: "3:42" },
+  { id: 2, title: "Deep Focus", artist: "Lo-Fi Dreamers", album: "Study Beats", duration: "4:15" },
+  { id: 3, title: "Midnight Code", artist: "Cyber Ambience", album: "Dev Mode", duration: "5:01" },
+  { id: 4, title: "Solar Flare", artist: "Astro Beats", album: "Space Journey", duration: "3:28" },
+  { id: 5, title: "Rainy Window", artist: "Chillhop Essentials", album: "Rainy Days", duration: "2:54" },
 ];
 
 const Music = () => {
-  const { windows } = useWindowStore();
-  const dark = windows.music?.isOpen ?? false; // simplified: just use window state for now
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
-  const [isShuffled, setIsShuffled] = useState(false);
-  const [repeatMode, setRepeatMode] = useState("off"); // off, all, one
 
-  const track = sampleTracks[currentTrack];
+  const track = tracks[currentTrack];
 
-  const togglePlay = () => setIsPlaying(!isPlaying);
-  const nextTrack = () =>
-    setCurrentTrack((prev) => (prev + 1) % sampleTracks.length);
-  const prevTrack = () =>
-    setCurrentTrack((prev) => (prev - 1 + sampleTracks.length) % sampleTracks.length);
-  const toggleLike = () => setIsLiked(!isLiked);
-  const toggleShuffle = () => setIsShuffled(!isShuffled);
-  const cycleRepeat = () => {
-    const modes = ["off", "all", "one"];
-    const idx = modes.indexOf(repeatMode);
-    setRepeatMode(modes[(idx + 1) % modes.length]);
+  const handleTrackSelect = (idx) => {
+    setCurrentTrack(idx);
+    setIsPlaying(true);
   };
 
   return (
     <>
       <div id="window-header">
         <WindowControls target="music" />
-
-        <div className="flex items-center gap-2 ml-4">
-          <MusicIcon className="icon" size={16} />
-          <h2 className="text-sm font-medium text-gray-600">Music</h2>
-        </div>
-
-        <div className="flex items-center gap-3 mr-2">
-          <MoreHorizontal className="icon" size={16} />
-        </div>
+        <h2>Music</h2>
+        <Search className="icon" />
       </div>
 
-      <div
-        className={`music-player ${dark ? "dark" : ""}`}
-        style={{
-          backgroundColor: dark ? "#121212" : "#fafafa",
-        }}
-      >
-        {/* Now Playing Section */}
-        <div className="now-playing">
-          <div className="album-art">
-            <img
-              src={track.cover || "/images/music-default.jpg"}
-              alt={track.title}
-              onError={(e) => {
-                e.target.src =
-                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='40'%3E♪%3C/text%3E%3C/svg%3E";
-              }}
-            />
+      <div className="music-body">
+        <aside className="music-sidebar">
+          <div className="sidebar-group">
+            <h3>Apple Music</h3>
+            <ul>
+              <li className="active"><Music2 /> Listen Now</li>
+              <li><Radio /> Browse</li>
+              <li><User /> Artists</li>
+            </ul>
           </div>
-
-          <div className="track-info">
-            <h3 className="track-title">{track.title}</h3>
-            <p className="track-artist">{track.artist}</p>
+          <div className="sidebar-group">
+            <h3>Library</h3>
+            <ul>
+              <li><Disc3 /> Albums</li>
+              <li><ListMusic /> Songs</li>
+            </ul>
           </div>
+        </aside>
 
-          <button
-            onClick={toggleLike}
-            className={`like-btn ${isLiked ? "liked" : ""}`}
-          >
-            <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
-          </button>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="progress-section">
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: "35%" }}>
-              <div className="progress-thumb" />
+        <main className="music-main">
+          <div className="music-hero">
+            <div className="hero-art">
+              <div className="art-placeholder" />
+            </div>
+            <div className="hero-info">
+              <span className="hero-tag">PLAYLIST</span>
+              <h1>Midnight Coding</h1>
+              <p className="hero-meta">Lo-fi & Synthwave • 42 songs, 2 hr 14 min</p>
+              <div className="hero-actions">
+                <button className="btn-play" onClick={() => setIsPlaying(true)}>
+                  <Play className="size-4 mr-1.5 ml-0.5" fill="currentColor" /> Play
+                </button>
+                <button className="btn-shuffle">Shuffle</button>
+              </div>
             </div>
           </div>
-          <div className="time-labels">
-            <span>1:18</span>
-            <span>{track.duration}</span>
+
+          <div className="music-tracks">
+            <div className="tracks-header">
+              <span className="col-num">#</span>
+              <span className="col-title">Title</span>
+              <span className="col-album">Album</span>
+              <span className="col-time"><Clock className="size-3.5" /></span>
+            </div>
+            <ul>
+              {tracks.map((t, idx) => (
+                <li
+                  key={t.id}
+                  className={`track-row ${idx === currentTrack ? "active" : ""}`}
+                  onClick={() => handleTrackSelect(idx)}
+                >
+                  <span className="col-num">
+                    {idx === currentTrack && isPlaying ? (
+                      <span className="eq-bars">
+                        <span></span><span></span><span></span>
+                      </span>
+                    ) : (
+                      idx + 1
+                    )}
+                  </span>
+                  <span className="col-title">
+                    <span className="track-name">{t.title}</span>
+                    <span className="track-artist">{t.artist}</span>
+                  </span>
+                  <span className="col-album">{t.album}</span>
+                  <span className="col-time">
+                    {t.duration}
+                    <Heart className="col-like size-3.5" fill={idx === currentTrack && isLiked ? "currentColor" : "none"} onClick={(e) => { e.stopPropagation(); setIsLiked(!isLiked); }} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </main>
+      </div>
+
+      <div className="music-player-bar">
+        <div className="np-info">
+          <div className="np-art">
+            <div className="np-placeholder" />
+          </div>
+          <div className="np-text">
+            <span className="np-title">{track.title}</span>
+            <span className="np-artist">{track.artist}</span>
+          </div>
+          <Heart className="size-4 text-gray-400 hover:text-red-500 transition ml-auto cursor-pointer" fill={isLiked ? "currentColor" : "none"} />
+        </div>
+
+        <div className="np-controls">
+          <div className="np-buttons">
+            <button><Shuffle className="size-4" /></button>
+            <button onClick={() => setCurrentTrack((prev) => (prev - 1 + tracks.length) % tracks.length)}>
+              <SkipBack className="size-5" fill="currentColor" />
+            </button>
+            <button className="play-btn" onClick={() => setIsPlaying(!isPlaying)}>
+              {isPlaying ? <Pause className="size-4" fill="currentColor" /> : <Play className="size-4 ml-0.5" fill="currentColor" />}
+            </button>
+            <button onClick={() => setCurrentTrack((prev) => (prev + 1) % tracks.length)}>
+              <SkipForward className="size-5" fill="currentColor" />
+            </button>
+            <button><Repeat className="size-4" /></button>
+          </div>
+          <div className="np-progress">
+            <span className="time">1:18</span>
+            <div className="bar">
+              <div className="fill" style={{ width: "35%" }} />
+            </div>
+            <span className="time">{track.duration}</span>
           </div>
         </div>
 
-        {/* Playback Controls */}
-        <div className="playback-controls">
-          <button
-            onClick={toggleShuffle}
-            className={`control-btn shuffle ${isShuffled ? "active" : ""}`}
-          >
-            <Shuffle size={18} />
-          </button>
-
-          <button onClick={prevTrack} className="control-btn">
-            <SkipBack size={22} fill="currentColor" />
-          </button>
-
-          <button onClick={togglePlay} className="control-btn play-btn">
-            {isPlaying ? (
-              <Pause size={28} fill="currentColor" />
-            ) : (
-              <Play size={28} fill="currentColor" />
-            )}
-          </button>
-
-          <button onClick={nextTrack} className="control-btn">
-            <SkipForward size={22} fill="currentColor" />
-          </button>
-
-          <button
-            onClick={cycleRepeat}
-            className={`control-btn repeat ${repeatMode !== "off" ? "active" : ""}`}
-          >
-            <Repeat size={18} />
-            {repeatMode === "one" && <span className="repeat-indicator">1</span>}
-          </button>
-        </div>
-
-        {/* Volume Control */}
-        <div className="volume-section">
-          <Volume2 size={16} />
-          <div className="volume-bar">
-            <div className="volume-fill" style={{ width: "70%" }} />
+        <div className="np-volume">
+          <Volume2 className="size-4" />
+          <div className="vol-bar">
+            <div className="fill" style={{ width: "70%" }} />
           </div>
         </div>
-
-        {/* Playlist */}
-        <div className="playlist">
-          <h4 className="playlist-title">Up Next</h4>
-          <div className="playlist-items">
-            {sampleTracks.map((t, idx) => (
-              <div
-                key={t.id}
-                className={`playlist-item ${idx === currentTrack ? "active" : ""}`}
-                onClick={() => setCurrentTrack(idx)}
-              >
-                <img
-                  src={t.cover || "/images/music-default.jpg"}
-                  alt={t.title}
-                  onError={(e) => {
-                    e.target.src =
-                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='40'%3E♪%3C/text%3E%3C/svg%3E";
-                  }}
-                  className="playlist-cover"
-                />
-                <div className="playlist-track-info">
-                  <p className="playlist-track-title">{t.title}</p>
-                  <p className="playlist-track-artist">{t.artist}</p>
-                </div>
-                <span className="playlist-duration">{t.duration}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Embedded Spotify Frame (fallback/alternative) */}
-        <iframe
-          src={SPOTIFY_URL}
-          title="Spotify Player"
-          className="spotify-frame"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        />
       </div>
     </>
   );
 };
 
 const MusicWindow = WindowWrapper(Music, "music");
-
 export default MusicWindow;

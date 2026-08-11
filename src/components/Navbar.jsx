@@ -33,7 +33,7 @@ const glyphFor = (type) => {
           <path d="M9.5 14a3 3 0 0 0 5 0" />
         </svg>
       );
-    case "safari":
+    case "music":
       return (
         <svg {...common}>
           <circle cx="12" cy="12" r="9" />

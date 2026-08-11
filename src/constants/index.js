@@ -45,7 +45,7 @@ const dockApps = [
   {
     id: "music",
     name: "Music", // replaced "Articles"/"Safari"
-    icon: "safari.png", // keeping safari icon as requested (you'll replace later)
+    icon: "music.png", // keeping safari icon as requested (you'll replace later)
     canOpen: true,
   },
   {

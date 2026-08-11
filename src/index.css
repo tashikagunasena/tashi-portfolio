@@ -859,6 +859,194 @@ body {
     }
   }
 
+  #music {
+    @apply w-md absolute bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
+    
+    .music-player {
+      @apply flex flex-col p-5 gap-4;
+      
+      &.dark {
+        .track-title, .track-artist, .playlist-title, .playlist-track-title, .playlist-track-artist {
+          @apply text-white;
+        }
+        .time-labels span, .playlist-duration {
+          @apply text-gray-400;
+        }
+        .progress-bar, .volume-bar {
+          @apply bg-gray-700;
+        }
+        .progress-fill, .volume-fill {
+          @apply bg-green-500;
+        }
+        .control-btn {
+          @apply text-white hover:bg-gray-800;
+          &.active {
+            @apply text-green-500;
+          }
+        }
+        .like-btn {
+          @apply text-gray-400 hover:text-red-500;
+          &.liked {
+            @apply text-red-500;
+          }
+        }
+        .playlist-item {
+          @apply hover:bg-gray-800;
+          &.active {
+            @apply bg-gray-800;
+          }
+        }
+      }
+    }
+
+    .now-playing {
+      @apply flex items-center gap-4;
+      
+      .album-art {
+        @apply w-20 h-20 rounded-lg overflow-hidden shadow-lg flex-shrink-0;
+        img {
+          @apply w-full h-full object-cover;
+        }
+      }
+      
+      .track-info {
+        @apply flex-1 min-w-0;
+        .track-title {
+          @apply font-semibold text-base text-gray-900 truncate;
+        }
+        .track-artist {
+          @apply text-sm text-gray-500 truncate;
+        }
+      }
+      
+      .like-btn {
+        @apply p-2 rounded-full transition-colors duration-200;
+        @apply text-gray-400 hover:text-red-500 hover:bg-gray-100;
+        &.liked {
+          @apply text-red-500;
+        }
+      }
+    }
+
+    .progress-section {
+      @apply space-y-1;
+      
+      .progress-bar {
+        @apply h-1.5 bg-gray-200 rounded-full cursor-pointer relative;
+        .progress-fill {
+          @apply h-full bg-green-500 rounded-full relative transition-all duration-200;
+          .progress-thumb {
+            @apply absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity;
+          }
+        }
+        &:hover .progress-fill .progress-thumb {
+          @apply opacity-100;
+        }
+      }
+      
+      .time-labels {
+        @apply flex justify-between text-xs text-gray-400 font-medium;
+      }
+    }
+
+    .playback-controls {
+      @apply flex items-center justify-center gap-4;
+      
+      .control-btn {
+        @apply p-2 rounded-full transition-all duration-200;
+        @apply text-gray-700 hover:bg-gray-100 hover:scale-110 active:scale-95;
+        &.active {
+          @apply text-green-500;
+        }
+        &.play-btn {
+          @apply p-3 bg-green-500 text-white hover:bg-green-600 hover:scale-105;
+        }
+      }
+      
+      .repeat {
+        @apply relative;
+        .repeat-indicator {
+          @apply absolute -top-1 -right-1 text-[10px] font-bold bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center;
+        }
+      }
+    }
+
+    .volume-section {
+      @apply flex items-center gap-2 px-2;
+      
+      svg {
+        @apply text-gray-400;
+      }
+      
+      .volume-bar {
+        @apply flex-1 h-1 bg-gray-200 rounded-full cursor-pointer;
+        .volume-fill {
+          @apply h-full bg-gray-400 rounded-full transition-all duration-200;
+        }
+      }
+    }
+
+    .playlist {
+      @apply mt-2;
+      
+      .playlist-title {
+        @apply text-sm font-semibold text-gray-700 mb-3;
+      }
+      
+      .playlist-items {
+        @apply space-y-2 max-h-40 overflow-y-auto;
+        
+        .playlist-item {
+          @apply flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200;
+          @apply hover:bg-gray-50;
+          &.active {
+            @apply bg-gray-100;
+          }
+          
+          .playlist-cover {
+            @apply w-10 h-10 rounded object-cover flex-shrink-0;
+          }
+          
+          .playlist-track-info {
+            @apply flex-1 min-w-0;
+            .playlist-track-title {
+              @apply text-sm font-medium text-gray-900 truncate;
+            }
+            .playlist-track-artist {
+              @apply text-xs text-gray-500 truncate;
+            }
+          }
+          
+          .playlist-duration {
+            @apply text-xs text-gray-400 font-medium;
+          }
+        }
+      }
+    }
+
+    .spotify-frame {
+      @apply w-full h-0 opacity-0 pointer-events-none;
+    }
+
+    @media (max-width: 640px) {
+      @apply w-[95vw] max-h-[70dvh] overflow-y-auto;
+      
+      .music-player {
+        @apply p-3;
+      }
+      
+      .now-playing {
+        .album-art {
+          @apply w-16 h-16;
+        }
+      }
+      
+      .playlist-items {
+        @apply max-h-32;
+      }
+    }
+  }
+
   /* Desktop home folders are no longer rendered (see Home.jsx). Inert; safe to delete. */
   #home {
     @apply relative z-0 max-sm:hidden;

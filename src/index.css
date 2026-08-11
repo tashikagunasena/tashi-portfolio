@@ -134,8 +134,28 @@ body {
   }
 
   /* ---------- Welcome: desktop hero only ---------- */
+  /* ---------- Welcome: desktop hero only ---------- */
   #welcome {
-    @apply text-gray-200 flex flex-col justify-center items-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none max-sm:hidden;
+    @apply text-gray-200 flex flex-col justify-center items-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none max-sm:hidden isolate;
+
+    /* soft spotlight scrim behind the hero — light type on ANY wallpaper */
+    &::before {
+      content: "";
+      @apply pointer-events-none absolute -inset-x-28 -inset-y-20 -z-10;
+      background: radial-gradient(
+        closest-side,
+        rgba(6, 8, 20, 0.45),
+        rgba(6, 8, 20, 0.22) 55%,
+        transparent 100%
+      );
+    }
+
+    p,
+    h1 {
+      text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.45),
+        0 4px 28px rgba(0, 0, 0, 0.35);
+    }
   }
 
   #dock {
@@ -177,16 +197,21 @@ body {
   #mobile-home {
     @apply sm:hidden relative z-0 w-full flex-1 min-h-0;
     @apply px-5 pt-4 pb-28 overflow-y-auto overscroll-contain;
+    /* readability scrim: stays put while content scrolls, works on any wallpaper */
+    background: linear-gradient(
+      180deg,
+      rgba(7, 9, 20, 0.4) 0%,
+      rgba(7, 9, 20, 0.26) 45%,
+      rgba(7, 9, 20, 0.4) 100%
+    );
 
-    /* ambient depth: edge vignette + a dot-grid that fades out, plus a
-       slow glass-reflection streak. No aurora blobs. */
     .ambient {
       @apply pointer-events-none absolute inset-0 overflow-hidden;
       background-image:
         radial-gradient(
           120% 80% at 50% 0%,
           transparent 38%,
-          rgba(0, 0, 0, 0.38) 100%
+          rgba(0, 0, 0, 0.25) 100%
         ),
         radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
       background-size:
@@ -213,7 +238,7 @@ body {
 
     .home-status {
       @apply flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl text-white;
-      @apply bg-white/10 ring-1 ring-white/15 backdrop-blur-md;
+      @apply bg-black/30 ring-1 ring-white/20 backdrop-blur-md;
       .hs-clock {
         @apply font-roboto text-sm tabular-nums tracking-wide text-white/90;
       }
@@ -852,8 +877,9 @@ body {
 }
 
 /* ---------- Desktop widgets: right side, macOS-style 2-up grid ---------- */
+/* ---------- Desktop widgets: compact 2-up grid ---------- */
 #widgets {
-  @apply absolute right-3 top-5 z-10 grid w-[19rem] grid-cols-2 gap-3 select-none max-sm:hidden;
+  @apply absolute right-3 top-5 z-10 grid w-[15rem] grid-cols-2 gap-2 select-none max-sm:hidden;
 
   .widget {
     @apply cursor-grab active:cursor-grabbing min-w-0;
@@ -863,60 +889,58 @@ body {
     animation-delay: 0.08s;
   }
   .widget:nth-child(3) {
-    @apply col-span-2; /* photo becomes a medium widget */
+    @apply col-span-2;
     animation-delay: 0.16s;
   }
-
   .widget-card {
-    @apply h-full w-full overflow-hidden rounded-[1.4rem];
+    @apply h-full w-full overflow-hidden rounded-[1.1rem];
     @apply shadow-lg shadow-black/20 ring-1 ring-black/5;
     @apply transition-shadow duration-300 hover:shadow-2xl hover:shadow-black/30;
   }
 
   /* small widget: calendar */
   .cal {
-    @apply bg-white/95 p-3;
+    @apply bg-white/95 p-2.5;
   }
   .cal-month {
     @apply text-[7px] font-semibold uppercase tracking-[0.18em] text-red-500;
   }
   .cal-grid {
-    @apply mt-1.5 grid grid-cols-7 gap-y-1 text-center;
+    @apply mt-1 grid grid-cols-7 gap-y-0.5 text-center;
   }
   .cal-dow {
-    @apply text-[9px] font-medium text-gray-400;
+    @apply text-[8px] font-medium text-gray-400;
   }
   .cal-date {
-    @apply mx-auto grid size-3 place-items-center rounded-full text-[9px] tabular-nums text-gray-700;
+    @apply mx-auto grid size-3 place-items-center rounded-full text-[8px] tabular-nums text-gray-700;
   }
   .cal-date.today {
     @apply bg-red-500 font-semibold text-white;
   }
 
-  /* small widget: weather — stretches to match the calendar's height */
+  /* small widget: weather */
   .weather {
     background: linear-gradient(165deg, #5b8bd9 0%, #3a6bc4 45%, #274ea0 100%);
-    @apply p-3 text-white;
+    @apply p-2.5 text-white;
     .w-city {
-      @apply text-xs font-semibold;
+      @apply text-[11px] font-semibold;
     }
     .w-temp {
-      @apply mt-0.5 text-2xl font-light tabular-nums;
+      @apply mt-0.5 text-xl font-light tabular-nums;
     }
     .w-foot {
-      @apply mt-2 flex flex-col gap-0.5 text-[9px] text-white/85;
+      @apply mt-1.5 flex flex-col gap-0.5 text-[8px] text-white/85;
     }
   }
 
   /* medium widget: photo spans both columns */
   .photo {
-    @apply relative block h-36 w-full cursor-pointer;
+    @apply relative block h-28 w-full cursor-pointer;
     img {
       @apply size-full object-cover;
-      animation: widget-kenburns 14s ease-in-out infinite alternate;
     }
     .photo-tag {
-      @apply absolute bottom-2 left-3 text-[11px] font-roboto uppercase tracking-[0.2em] text-white/90;
+      @apply absolute bottom-1.5 left-2.5 text-[10px] font-roboto uppercase tracking-[0.2em] text-white/90;
       text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
     }
   }

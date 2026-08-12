@@ -1,16 +1,38 @@
-import { useState, useRef, useLayoutEffect } from "react";
+import { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
 import dayjs from "dayjs";
 import { navIcons, navLinks } from "#constants";
 import useWindowStore from "#store/window";
+import useControlStore from "#store/control.js";
+import ControlCenter from "#components/ControlCenter.jsx";
 
-/* tiny self‑ticking clock so the bar / menu feel alive without re‑rendering siblings */
+/* The Control Center trigger is the toggle icon that ALREADY lives in
+   navIcons. Find it by id, by file name, or — last resort — as the
+   final icon in the bar (wifi / search / user / toggle). */
+const CC_KEYS = [
+  "control",
+  "control-center",
+  "controlcenter",
+  "cc",
+  "toggle",
+  "center",
+  "switch",
+];
+const isCCIcon = ({ id, img }) =>
+  CC_KEYS.includes(String(id).toLowerCase()) ||
+  CC_KEYS.some((k) =>
+    String(img ?? "")
+      .toLowerCase()
+      .includes(k),
+  ) ||
+  id === navIcons[navIcons.length - 1]?.id;
+
 const LiveTime = ({ format, className }) => {
   const [now, setNow] = useState(() => dayjs());
-  useState(() => {
+  useEffect(() => {
     const t = setInterval(() => setNow(dayjs()), 1000);
-    LiveTime._t = t;
-  });
+    return () => clearInterval(t);
+  }, []);
   return <time className={className}>{now.format(format)}</time>;
 };
 
@@ -95,9 +117,14 @@ const Chevron = () => (
 
 const Navbar = () => {
   const { openWindow } = useWindowStore();
+  const ccOpen = useControlStore((s) => s.open);
+  const setCCOpen = useControlStore((s) => s.setOpen);
   const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef(null);
   const [anchorTop, setAnchorTop] = useState(0);
+
+  /* the existing toggle icon, reused wherever we need a trigger */
+  const ccIcon = navIcons.find(isCCIcon) ?? navIcons[navIcons.length - 1];
 
   useLayoutEffect(() => {
     if (!menuOpen) return;
@@ -119,6 +146,10 @@ const Navbar = () => {
     setMenuOpen(false);
   };
 
+  const handleNavIcon = (icon) => {
+    if (isCCIcon(icon)) setCCOpen(!ccOpen);
+  };
+
   return (
     <nav ref={navRef}>
       <div className="nav-left">
@@ -135,42 +166,72 @@ const Navbar = () => {
 
       <div className="nav-right">
         <ul>
-          {navIcons.map(({ id, img }) => (
-            <li key={id}>
-              <img src={img} className="icon-hover" alt={`icon-${id}`} />
+          {navIcons.map((icon) => (
+            <li
+              key={icon.id}
+              className="cursor-pointer"
+              onClick={() => handleNavIcon(icon)}
+            >
+              <img
+                src={icon.img}
+                className="icon-hover"
+                alt={`icon-${icon.id}`}
+              />
             </li>
           ))}
         </ul>
         <LiveTime format="ddd MMM D · h:mm A" />
       </div>
 
-      <button
-        id="mobile-nav-toggle"
-        aria-label={menuOpen ? "Close menu" : "Open menu"}
-        aria-expanded={menuOpen}
-        onClick={() => setMenuOpen((v) => !v)}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          className={`absolute inset-0 m-auto size-6 transition-all duration-300 ${menuOpen ? "rotate-90 scale-50 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
+      <div className="nav-actions">
+        {/* mobile trigger: same existing icon, whitened for the bar —
+            not a new glyph */}
+        <button
+          id="cc-toggle-mobile"
+          aria-label="Control Center"
+          aria-expanded={ccOpen}
+          onClick={() => setCCOpen(!ccOpen)}
         >
-          <path d="M4 7h16M4 12h16M4 17h16" />
-        </svg>
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          className={`absolute inset-0 m-auto size-6 transition-all duration-300 ${menuOpen ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-50 opacity-0"}`}
+          <img
+            src={ccIcon?.img}
+            alt=""
+            draggable={false}
+            className="size-6"
+            style={{
+              filter:
+                "brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.45))",
+            }}
+          />
+        </button>
+
+        <button
+          id="mobile-nav-toggle"
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((v) => !v)}
         >
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      </button>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            className={`absolute inset-0 m-auto size-6 transition-all duration-300 ${menuOpen ? "rotate-90 scale-50 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
+          >
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            className={`absolute inset-0 m-auto size-6 transition-all duration-300 ${menuOpen ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-50 opacity-0"}`}
+          >
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
 
       {menuOpen &&
         typeof document !== "undefined" &&
@@ -221,6 +282,8 @@ const Navbar = () => {
           </>,
           document.body,
         )}
+
+      <ControlCenter />
     </nav>
   );
 };

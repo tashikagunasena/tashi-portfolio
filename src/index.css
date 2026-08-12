@@ -34,23 +34,61 @@ body {
   }
 
   nav {
-    @apply flex justify-between items-center bg-white/50 backdrop-blur-3xl p-2 px-5 select-none relative;
+    /* macOS 26 menu bar: zero transparency layers — the wallpaper IS the bar */
+    @apply flex justify-between items-center p-2 px-5 select-none relative isolate text-white;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+
+    /* same readability treatment as the hero: soft dark scrim bleeding
+     below the bar + the deep two-layer text shadow from #welcome */
+    &::before {
+      content: "";
+      @apply pointer-events-none absolute inset-x-0 top-0 -z-10;
+      height: calc(100% + 2.5rem);
+      background: linear-gradient(
+        180deg,
+        rgba(6, 8, 20, 0.45) 0%,
+        rgba(6, 8, 20, 0.22) 55%,
+        transparent 100%
+      );
+    }
+
+    p,
+    time {
+      text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.45),
+        0 4px 28px rgba(0, 0, 0, 0.35);
+    }
 
     .nav-left {
       @apply flex items-center gap-5 max-sm:gap-2;
+      > img {
+        filter: brightness(0) invert(1)
+          drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+      }
     }
+
+    .nav-actions {
+      @apply flex items-center gap-1 sm:hidden;
+    }
+
     .nav-right {
       @apply flex items-center gap-5 max-sm:hidden;
+      ul img {
+        filter: brightness(0) invert(1)
+          drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+      }
     }
     .nav-left ul,
     .nav-right ul {
       @apply flex items-center gap-5 max-sm:hidden;
     }
     .nav-left ul p {
-      @apply text-sm cursor-pointer hover:underline transition-all;
+      @apply text-sm text-white/90 cursor-pointer hover:underline transition-all;
     }
     time {
-      @apply text-sm font-medium text-black tabular-nums;
+      @apply text-sm font-medium text-white tabular-nums;
     }
 
     @media (max-width: 640px) {
@@ -66,8 +104,413 @@ body {
 
   /* ---------- Mobile navbar: morphing toggle ---------- */
   #mobile-nav-toggle {
-    @apply sm:hidden relative flex-center size-10 -me-1 rounded-xl text-gray-800;
-    @apply bg-white/40 ring-1 ring-black/5 backdrop-blur-md active:bg-black/10 transition;
+    @apply sm:hidden relative flex-center size-10 -me-1 rounded-xl text-white;
+    @apply active:bg-white/15 transition;
+  }
+
+  #mobile-nav-toggle svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+  }
+
+  /* ---------- macOS 26-style Control Center ---------- */
+  #cc-toggle-mobile {
+    @apply sm:hidden relative flex-center size-10 rounded-xl text-white;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #cc-toggle-mobile svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+  }
+
+  /* brightness overlay - never captures input */
+  #cc-dim {
+    @apply fixed inset-0 pointer-events-none z-[1150];
+    background: #000;
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+
+  /* click-away layer */
+  #cc-backdrop {
+    @apply fixed inset-0 z-[1160] cursor-default;
+    background: transparent;
+  }
+
+  #cc-backdrop.closing {
+    pointer-events: none;
+  }
+
+  #control-center {
+    @apply fixed z-[1161] text-white select-none flex flex-col;
+    top: var(--cc-top, 48px);
+    right: 0.75rem;
+    width: 19rem;
+    gap: 0.5rem;
+    transform-origin: top right;
+    isolation: isolate;
+    color-scheme: dark;
+    /* readability treatment — shadows + halo, NOT a dark panel */
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.5),
+      0 4px 28px rgba(0, 0, 0, 0.4);
+    animation: cc-pop 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    button {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    &.closing {
+      pointer-events: none;
+      animation: cc-pop-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
+    }
+    /* macOS 26 light frosted glass — the default look */
+    .cc-glass {
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0.13) 100%
+      );
+      -webkit-backdrop-filter: blur(28px) saturate(175%);
+      backdrop-filter: blur(28px) saturate(175%);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.38),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+        0 16px 36px rgba(0, 0, 0, 0.18);
+    }
+    .cc-top {
+      @apply grid grid-cols-2;
+      gap: 0.5rem;
+    }
+    .cc-connect,
+    .cc-player {
+      min-height: 8.6rem;
+      border-radius: 1.45rem;
+    }
+    .cc-connect {
+      @apply flex flex-col justify-between;
+      padding: 0.6rem;
+    }
+    .cc-wifi {
+      @apply flex items-center gap-2.5 w-full text-left;
+      min-height: 0;
+      padding: 0.3rem 0.5rem 0.3rem 0.3rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: none;
+    }
+    .cc-wifi.on {
+      background: linear-gradient(
+        180deg,
+        rgba(86, 169, 255, 0.72),
+        rgba(16, 130, 255, 0.58)
+      );
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .cc-wifi:active,
+    .cc-round:active,
+    .cc-focus:active,
+    .cc-orb:active,
+    .cc-play:active,
+    .cc-player-controls button:active {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+    .cc-wifi-icon {
+      @apply flex-center flex-none;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #1486ff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+    }
+    .cc-wifi:not(.on) .cc-wifi-icon {
+      background: rgba(255, 255, 255, 0.25);
+      color: white;
+      box-shadow: none;
+    }
+    .cc-wifi-text {
+      @apply flex flex-col min-w-0;
+      gap: 0.05rem;
+    }
+    .cc-wifi-name {
+      @apply text-sm font-semibold leading-4;
+    }
+    .cc-wifi-sub {
+      @apply text-[11px] leading-4 text-white/75 truncate;
+    }
+    .cc-connect-row {
+      @apply flex items-center;
+      gap: 0.5rem;
+    }
+    /* OFF = frosted translucent + white icon, ON = solid white + blue,
+     so the toggle state always reads on light glass */
+    .cc-round {
+      @apply flex-center cursor-pointer;
+      width: 2.85rem;
+      height: 2.85rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.28);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: none;
+      transition: none;
+    }
+    .cc-round:not(.on) svg,
+    .cc-orb:not(.on):not(.on-amber) svg {
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+    }
+    .cc-round.on,
+    .cc-orb.on {
+      background: rgba(255, 255, 255, 0.92);
+      color: #1287ff;
+    }
+    .cc-round.on-amber {
+      background: #ffd765;
+      color: #4a3b00;
+    }
+    .cc-player {
+      @apply flex flex-col justify-between;
+      padding: 0.6rem;
+      overflow: hidden;
+    }
+    .cc-player-head {
+      @apply flex items-center min-w-0;
+      gap: 0.6rem;
+    }
+    .cc-art {
+      @apply flex-center flex-none overflow-hidden;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 0.8rem;
+      color: white;
+      background:
+        radial-gradient(circle at 30% 25%, #ffba8f 0 7%, transparent 8%),
+        radial-gradient(circle at 70% 60%, #f1d45b 0 8%, transparent 9%),
+        linear-gradient(145deg, #f13e49, #a51630 55%, #491828);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
+    }
+    .cc-eq {
+      @apply flex items-end;
+      gap: 2px;
+      height: 1rem;
+    }
+    .cc-eq span {
+      @apply bg-white rounded-full;
+      width: 3px;
+      animation: eq-bounce 0.8s ease-in-out infinite;
+    }
+    .cc-eq span:nth-child(1) {
+      height: 60%;
+    }
+    .cc-eq span:nth-child(2) {
+      height: 100%;
+      animation-delay: 0.2s;
+    }
+    .cc-eq span:nth-child(3) {
+      height: 40%;
+      animation-delay: 0.4s;
+    }
+    .cc-track {
+      @apply flex flex-col min-w-0;
+      gap: 0.05rem;
+    }
+    .cc-title {
+      @apply text-sm font-semibold truncate font-georama;
+    }
+    .cc-artist {
+      @apply text-[11px] text-white/75 truncate font-roboto;
+    }
+    .cc-player-controls {
+      @apply flex items-center justify-between;
+      padding: 0 0.6rem 0.05rem;
+    }
+    .cc-player-controls button {
+      @apply flex-center text-white cursor-pointer;
+      width: 2.1rem;
+      height: 2.1rem;
+      border-radius: 999px;
+      background: transparent;
+      border: 0;
+      transition: none;
+    }
+    .cc-play {
+      @apply flex-center;
+      width: 2.5rem !important;
+      height: 2.5rem !important;
+      background: rgba(255, 255, 255, 0.22) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    }
+    .cc-mid {
+      @apply flex items-center;
+      gap: 0.5rem;
+    }
+    .cc-focus {
+      @apply flex items-center cursor-pointer text-sm font-medium;
+      flex: 1;
+      min-width: 0;
+      height: 2.85rem;
+      gap: 0.55rem;
+      padding: 0.3rem 0.8rem 0.3rem 0.3rem;
+      border-radius: 999px;
+      color: white;
+      transition: none;
+    }
+    .cc-focus-icon {
+      @apply flex-center flex-none;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.25);
+    }
+    .cc-focus.on {
+      background: linear-gradient(
+        180deg,
+        rgba(126, 102, 226, 0.75),
+        rgba(95, 70, 181, 0.62)
+      );
+    }
+    .cc-focus.on .cc-focus-icon {
+      background: rgba(183, 164, 255, 0.8);
+    }
+    .cc-orb {
+      @apply flex-center cursor-pointer;
+      width: 2.85rem;
+      height: 2.85rem;
+      border-radius: 999px;
+      color: white;
+      transition: none;
+    }
+    .cc-slider-card {
+      @apply rounded-[1.4rem];
+      padding: 0.65rem 0.8rem 0.75rem;
+    }
+    .cc-label {
+      @apply block text-sm font-semibold;
+      margin-bottom: 0.4rem;
+    }
+    .cc-slider-row {
+      @apply flex items-center;
+      gap: 0.5rem;
+    }
+    .cc-slider {
+      @apply relative flex-1 cursor-pointer;
+      height: 1.25rem;
+      touch-action: none;
+    }
+    .cc-slider::before,
+    .cc-slider-fill {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 0.4rem;
+      border-radius: 999px;
+      transform: translateY(-50%);
+    }
+    .cc-slider::before {
+      content: "";
+      background: rgba(8, 57, 130, 0.35);
+    }
+    .cc-slider-fill {
+      right: auto;
+      background: rgba(255, 255, 255, 0.94);
+    }
+    .cc-slider-thumb {
+      position: absolute;
+      top: 50%;
+      width: 1.1rem;
+      height: 1.1rem;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      background: white;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
+    }
+    .cc-bottom {
+      @apply grid grid-cols-4;
+      gap: 0.5rem;
+    }
+    .cc-bottom .cc-orb {
+      width: 3.25rem;
+      height: 3.25rem;
+      justify-self: center;
+    }
+    /* dark scrim halo behind the panel — readability, not a dark panel */
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -1.1rem;
+      z-index: -1;
+      pointer-events: none;
+      border-radius: 2.5rem;
+      background: radial-gradient(
+        circle at 50% 0%,
+        rgba(6, 8, 20, 0.5),
+        rgba(6, 8, 20, 0.28) 55%,
+        transparent 80%
+      );
+      filter: blur(18px);
+    }
+    @media (max-width: 640px) {
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      padding: calc(env(safe-area-inset-top) + 0.75rem) 0.75rem 1rem;
+      max-height: 92dvh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+      animation: cc-sheet 360ms cubic-bezier(0.32, 0.72, 0, 1) both;
+      &::-webkit-scrollbar {
+        display: none;
+      }
+      &.closing {
+        animation: cc-sheet-out 260ms cubic-bezier(0.4, 0, 1, 1) both;
+      }
+      .cc-connect,
+      .cc-player {
+        min-height: 8.4rem;
+      }
+    }
+  }
+
+  /* ---------- Control Center dark appearance — ONLY under html.dark ---------- */
+  .dark #control-center {
+    .cc-glass {
+      background: linear-gradient(
+        180deg,
+        rgba(30, 34, 46, 0.62) 0%,
+        rgba(21, 25, 36, 0.55) 100%
+      );
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+        0 16px 36px rgba(0, 0, 0, 0.28);
+    }
+    .cc-wifi:not(.on) {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.13);
+    }
+    .cc-wifi:not(.on) .cc-wifi-icon {
+      background: rgba(255, 255, 255, 0.18);
+    }
+    .cc-round:not(.on) {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+    .cc-focus-icon {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .cc-slider::before {
+      background: rgba(255, 255, 255, 0.22);
+    }
   }
 
   /* ---------- Mobile menu: portal'd sheet + dimming backdrop ----------
@@ -133,7 +576,6 @@ body {
     }
   }
 
-  /* ---------- Welcome: desktop hero only ---------- */
   /* ---------- Welcome: desktop hero only ---------- */
   #welcome {
     @apply text-gray-200 flex flex-col justify-center items-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none max-sm:hidden isolate;
@@ -361,60 +803,150 @@ body {
   }
 
   #terminal {
-    @apply w-xl absolute bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
-    h2 {
-      @apply font-bold text-sm text-center w-full;
+    @apply absolute w-2xl h-[32rem] shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden flex flex-col;
+
+    /* ---------- theme layer ----------
+     Light is the default. When you ship dark mode, add `.dark` to <html>
+     (or `term-dark` to this window) and only these variables flip. */
+    --term-bg: #ffffff;
+    --term-text: #1f2937;
+    --term-muted: #6b7280;
+    --term-user: #b45309;
+    --term-path: #15803d;
+    --term-arrow: #dc2626;
+    --term-cmd: #dc2626;
+    --term-dir: #2563eb;
+    --term-file: #374151;
+    --term-error: #dc2626;
+    --term-scrollbar: rgba(0, 0, 0, 0.12);
+    background: var(--term-bg);
+
+    #window-header h2 {
+      @apply flex-1 text-center font-bold text-sm text-gray-500 tracking-wide;
     }
-    .techstack {
-      @apply text-sm font-roboto p-5;
-      .label {
-        @apply flex items-center ms-10 mt-7;
+
+    .term-body-wrapper {
+      @apply flex-1 min-h-0 overflow-y-auto p-4 font-roboto text-sm cursor-text relative;
+      color: var(--term-text);
+      &::-webkit-scrollbar {
+        width: 8px;
       }
-      .content {
-        @apply py-5 my-5 border-y border-dashed space-y-1;
-        li {
-          .check {
-            @apply text-[#00A154] w-5;
-          }
-          h3 {
-            @apply font-semibold text-[#00A154] w-32 ms-5;
-          }
-          ul {
-            @apply flex items-center gap-3;
-          }
-        }
+      &::-webkit-scrollbar-track {
+        background: transparent;
       }
-      .footnote {
-        @apply text-[#00A154] space-y-1;
-        p {
-          @apply flex items-center;
-          svg {
-            @apply w-5 me-5;
-          }
-        }
+      &::-webkit-scrollbar-thumb {
+        background: var(--term-scrollbar);
+        border-radius: 4px;
       }
     }
+
+    .term-body {
+      @apply flex flex-col gap-1;
+    }
+
+    .term-welcome {
+      color: var(--term-muted);
+      @apply mb-3 leading-relaxed;
+      .term-cmd {
+        color: var(--term-path);
+        @apply font-semibold;
+      }
+    }
+
+    .term-line {
+      @apply leading-relaxed break-all;
+    }
+
+    .term-prompt {
+      color: var(--term-user);
+      @apply font-semibold mr-2 whitespace-nowrap;
+      .term-path {
+        color: var(--term-path);
+      }
+      .term-arrow {
+        color: var(--term-arrow);
+        @apply ms-1;
+      }
+    }
+
+    .term-input {
+      @apply flex-1 bg-transparent outline-none min-w-0 font-roboto;
+      color: var(--term-text);
+      caret-color: var(--term-arrow);
+    }
+
+    .term-cmd {
+      color: var(--term-cmd);
+      @apply font-semibold;
+    }
+    .term-error {
+      color: var(--term-error);
+    }
+
+    .term-help {
+      @apply list-disc pl-5 space-y-1;
+      color: var(--term-muted);
+      .term-cmd {
+        color: var(--term-cmd);
+        @apply font-semibold;
+      }
+    }
+
+    .term-ls {
+      @apply grid grid-cols-3 gap-x-4 gap-y-1 mt-1;
+      .term-dir {
+        color: var(--term-dir);
+        @apply font-semibold;
+      }
+      .term-file {
+        color: var(--term-file);
+      }
+    }
+
+    .term-file-content {
+      color: var(--term-file);
+      @apply whitespace-pre-wrap;
+    }
+
+    /* the rm -rf takeover stays black on purpose — it's a system hijack */
+    .matrix-container {
+      @apply absolute inset-0 bg-black flex items-center justify-center cursor-pointer z-50;
+    }
+    .matrix-canvas {
+      @apply absolute inset-0 size-full;
+    }
+    .matrix-text {
+      @apply relative z-10 text-center text-white space-y-4 font-roboto select-none;
+      text-shadow: 0 0 10px rgba(46, 146, 68, 0.8);
+    }
+
     @media (max-width: 640px) {
-      @apply w-[95vw] max-h-[70dvh] overflow-y-auto;
-      .techstack {
-        @apply p-3 text-xs;
-        .label {
-          @apply flex-col items-start ms-0;
-          p {
-            @apply text-xs;
-          }
-        }
-        .content {
-          li {
-            @apply flex-col items-start gap-1;
-            h3 {
-              @apply w-full ms-0 mb-1;
-            }
-            ul {
-              @apply flex-wrap;
-            }
-          }
-        }
+      @apply w-[95vw] h-[70dvh];
+      .term-ls {
+        @apply grid-cols-2;
+      }
+    }
+  }
+
+  /* ---------- dark layer: inactive until you toggle it ---------- */
+  .dark #terminal,
+  #terminal.term-dark {
+    --term-bg: #1e1e1e;
+    --term-text: #e5e7eb;
+    --term-muted: #9ca3af;
+    --term-user: #fde047;
+    --term-path: #4ade80;
+    --term-arrow: #f87171;
+    --term-cmd: #f87171;
+    --term-dir: #60a5fa;
+    --term-file: #d1d5db;
+    --term-error: #ef4444;
+    --term-scrollbar: rgba(255, 255, 255, 0.12);
+
+    #window-header {
+      @apply bg-[#2d2d2d] border-gray-700/50;
+      h2 {
+        @apply text-gray-300;
       }
     }
   }
@@ -1281,6 +1813,35 @@ body {
   60%,
   100% {
     transform: translateX(220%);
+  }
+}
+
+@keyframes cc-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+@keyframes cc-sheet {
+  from {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes cc-pop-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+}
+@keyframes cc-sheet-out {
+  to {
+    transform: translateY(-100%);
   }
 }
 

@@ -1,30 +1,101 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { WindowControls } from "#components";
 import WindowWrapper from "#hoc/WindowWrapper.jsx";
+import usePlayerStore, { formatTime } from "#store/player.js";
 import {
-  Play, Pause, SkipBack, SkipForward, Shuffle, Repeat,
-  Music2, ListMusic, Heart, Clock, Search, User, Disc3, Radio, Volume2
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Shuffle,
+  Repeat,
+  Music2,
+  ListMusic,
+  Heart,
+  Clock,
+  Search,
+  User,
+  Disc3,
+  Radio,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
-const tracks = [
-  { id: 1, title: "Neon Nights", artist: "Synthwave Collective", album: "Retrowave", duration: "3:42" },
-  { id: 2, title: "Deep Focus", artist: "Lo-Fi Dreamers", album: "Study Beats", duration: "4:15" },
-  { id: 3, title: "Midnight Code", artist: "Cyber Ambience", album: "Dev Mode", duration: "5:01" },
-  { id: 4, title: "Solar Flare", artist: "Astro Beats", album: "Space Journey", duration: "3:28" },
-  { id: 5, title: "Rainy Window", artist: "Chillhop Essentials", album: "Rainy Days", duration: "2:54" },
-];
+/* draggable/clickable progress bar bound to the shared player */
+const SeekBar = () => {
+  const currentTime = usePlayerStore((s) => s.currentTime);
+  const duration = usePlayerStore((s) => s.duration);
+  const seek = usePlayerStore((s) => s.seek);
+  const ref = useRef(null);
+  const pct = duration ? Math.min((currentTime / duration) * 100, 100) : 0;
+
+  const update = (e) => {
+    const r = ref.current.getBoundingClientRect();
+    const f = Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);
+    seek(f * (duration || 0));
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="bar"
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        update(e);
+      }}
+      onPointerMove={(e) => e.buttons > 0 && update(e)}
+    >
+      <div className="fill" style={{ width: `${pct}%` }} />
+    </div>
+  );
+};
+
+const VolumeBar = () => {
+  const volume = usePlayerStore((s) => s.volume);
+  const setVolume = usePlayerStore((s) => s.setVolume);
+  const ref = useRef(null);
+
+  const update = (e) => {
+    const r = ref.current.getBoundingClientRect();
+    const f = Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);
+    setVolume(Math.round(f * 100));
+  };
+
+  return (
+    <div
+      ref={ref}
+      className="vol-bar"
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        update(e);
+      }}
+      onPointerMove={(e) => e.buttons > 0 && update(e)}
+    >
+      <div className="fill" style={{ width: `${volume}%` }} />
+    </div>
+  );
+};
 
 const Music = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
+  const tracks = usePlayerStore((s) => s.tracks);
+  const index = usePlayerStore((s) => s.index);
+  const playing = usePlayerStore((s) => s.playing);
+  const currentTime = usePlayerStore((s) => s.currentTime);
+  const duration = usePlayerStore((s) => s.duration);
+  const shuffle = usePlayerStore((s) => s.shuffle);
+  const repeat = usePlayerStore((s) => s.repeat);
+  const volume = usePlayerStore((s) => s.volume);
+  const playTrack = usePlayerStore((s) => s.playTrack);
+  const toggle = usePlayerStore((s) => s.toggle);
+  const next = usePlayerStore((s) => s.next);
+  const prev = usePlayerStore((s) => s.prev);
+  const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
+  const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
 
-  const track = tracks[currentTrack];
+  const [liked, setLiked] = useState({});
+  const track = tracks[index];
 
-  const handleTrackSelect = (idx) => {
-    setCurrentTrack(idx);
-    setIsPlaying(true);
-  };
+  const toggleLike = (id) => setLiked((p) => ({ ...p, [id]: !p[id] }));
 
   return (
     <>
@@ -39,16 +110,26 @@ const Music = () => {
           <div className="sidebar-group">
             <h3>Apple Music</h3>
             <ul>
-              <li className="active"><Music2 /> Listen Now</li>
-              <li><Radio /> Browse</li>
-              <li><User /> Artists</li>
+              <li className="active">
+                <Music2 /> Listen Now
+              </li>
+              <li>
+                <Radio /> Browse
+              </li>
+              <li>
+                <User /> Artists
+              </li>
             </ul>
           </div>
           <div className="sidebar-group">
             <h3>Library</h3>
             <ul>
-              <li><Disc3 /> Albums</li>
-              <li><ListMusic /> Songs</li>
+              <li>
+                <Disc3 /> Albums
+              </li>
+              <li>
+                <ListMusic /> Songs
+              </li>
             </ul>
           </div>
         </aside>
@@ -61,12 +142,24 @@ const Music = () => {
             <div className="hero-info">
               <span className="hero-tag">PLAYLIST</span>
               <h1>Midnight Coding</h1>
-              <p className="hero-meta">Lo-fi & Synthwave • 42 songs, 2 hr 14 min</p>
+              <p className="hero-meta">
+                Lo-fi & Synthwave • {tracks.length} songs, local library
+              </p>
               <div className="hero-actions">
-                <button className="btn-play" onClick={() => setIsPlaying(true)}>
-                  <Play className="size-4 mr-1.5 ml-0.5" fill="currentColor" /> Play
+                <button className="btn-play" onClick={toggle}>
+                  {playing ? (
+                    <Pause className="size-4 mr-1.5" fill="currentColor" />
+                  ) : (
+                    <Play
+                      className="size-4 mr-1.5 ml-0.5"
+                      fill="currentColor"
+                    />
+                  )}
+                  {playing ? "Pause" : "Play"}
                 </button>
-                <button className="btn-shuffle">Shuffle</button>
+                <button className="btn-shuffle" onClick={toggleShuffle}>
+                  Shuffle
+                </button>
               </div>
             </div>
           </div>
@@ -76,19 +169,23 @@ const Music = () => {
               <span className="col-num">#</span>
               <span className="col-title">Title</span>
               <span className="col-album">Album</span>
-              <span className="col-time"><Clock className="size-3.5" /></span>
+              <span className="col-time">
+                <Clock className="size-3.5" />
+              </span>
             </div>
             <ul>
               {tracks.map((t, idx) => (
                 <li
                   key={t.id}
-                  className={`track-row ${idx === currentTrack ? "active" : ""}`}
-                  onClick={() => handleTrackSelect(idx)}
+                  className={`track-row ${idx === index ? "active" : ""}`}
+                  onClick={() => playTrack(idx)}
                 >
                   <span className="col-num">
-                    {idx === currentTrack && isPlaying ? (
+                    {idx === index && playing ? (
                       <span className="eq-bars">
-                        <span></span><span></span><span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
                       </span>
                     ) : (
                       idx + 1
@@ -101,7 +198,14 @@ const Music = () => {
                   <span className="col-album">{t.album}</span>
                   <span className="col-time">
                     {t.duration}
-                    <Heart className="col-like size-3.5" fill={idx === currentTrack && isLiked ? "currentColor" : "none"} onClick={(e) => { e.stopPropagation(); setIsLiked(!isLiked); }} />
+                    <Heart
+                      className="col-like size-3.5"
+                      fill={liked[t.id] ? "currentColor" : "none"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleLike(t.id);
+                      }}
+                    />
                   </span>
                 </li>
               ))}
@@ -119,37 +223,57 @@ const Music = () => {
             <span className="np-title">{track.title}</span>
             <span className="np-artist">{track.artist}</span>
           </div>
-          <Heart className="size-4 text-gray-400 hover:text-red-500 transition ml-auto cursor-pointer" fill={isLiked ? "currentColor" : "none"} />
+          <Heart
+            className="size-4 text-gray-400 hover:text-red-500 transition ml-auto cursor-pointer"
+            fill={liked[track.id] ? "currentColor" : "none"}
+            onClick={() => toggleLike(track.id)}
+          />
         </div>
 
         <div className="np-controls">
           <div className="np-buttons">
-            <button><Shuffle className="size-4" /></button>
-            <button onClick={() => setCurrentTrack((prev) => (prev - 1 + tracks.length) % tracks.length)}>
+            <button
+              className={shuffle ? "active" : ""}
+              onClick={toggleShuffle}
+              title="Shuffle"
+            >
+              <Shuffle className="size-4" />
+            </button>
+            <button onClick={() => prev()}>
               <SkipBack className="size-5" fill="currentColor" />
             </button>
-            <button className="play-btn" onClick={() => setIsPlaying(!isPlaying)}>
-              {isPlaying ? <Pause className="size-4" fill="currentColor" /> : <Play className="size-4 ml-0.5" fill="currentColor" />}
+            <button className="play-btn" onClick={toggle}>
+              {playing ? (
+                <Pause className="size-4" fill="currentColor" />
+              ) : (
+                <Play className="size-4 ml-0.5" fill="currentColor" />
+              )}
             </button>
-            <button onClick={() => setCurrentTrack((prev) => (prev + 1) % tracks.length)}>
+            <button onClick={() => next()}>
               <SkipForward className="size-5" fill="currentColor" />
             </button>
-            <button><Repeat className="size-4" /></button>
+            <button
+              className={repeat !== "off" ? "active" : ""}
+              onClick={cycleRepeat}
+              title={`Repeat: ${repeat}`}
+            >
+              <Repeat className="size-4" />
+            </button>
           </div>
           <div className="np-progress">
-            <span className="time">1:18</span>
-            <div className="bar">
-              <div className="fill" style={{ width: "35%" }} />
-            </div>
-            <span className="time">{track.duration}</span>
+            <span className="time">{formatTime(currentTime)}</span>
+            <SeekBar />
+            <span className="time">{formatTime(duration)}</span>
           </div>
         </div>
 
         <div className="np-volume">
-          <Volume2 className="size-4" />
-          <div className="vol-bar">
-            <div className="fill" style={{ width: "70%" }} />
-          </div>
+          {volume === 0 ? (
+            <VolumeX className="size-4" />
+          ) : (
+            <Volume2 className="size-4" />
+          )}
+          <VolumeBar />
         </div>
       </div>
     </>

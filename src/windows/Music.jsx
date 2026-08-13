@@ -141,10 +141,8 @@ const Music = () => {
             </div>
             <div className="hero-info">
               <span className="hero-tag">PLAYLIST</span>
-              <h1>Midnight Coding</h1>
-              <p className="hero-meta">
-                Lo-fi & Synthwave • {tracks.length} songs, local library
-              </p>
+              <h1>My fav</h1>
+              <p className="hero-meta">{tracks.length} songs, local library</p>
               <div className="hero-actions">
                 <button className="btn-play" onClick={toggle}>
                   {playing ? (

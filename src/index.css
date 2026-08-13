@@ -144,7 +144,7 @@ body {
     @apply fixed z-[1161] text-white select-none flex flex-col;
     top: var(--cc-top, 48px);
     right: 0.75rem;
-    width: 19rem;
+    width: 17rem;
     gap: 0.5rem;
     transform-origin: top right;
     isolation: isolate;
@@ -245,21 +245,24 @@ body {
       @apply text-[11px] leading-4 text-white/75 truncate;
     }
     .cc-connect-row {
-      @apply flex items-center;
+      @apply grid grid-cols-2;
       gap: 0.5rem;
     }
-    /* OFF = frosted translucent + white icon, ON = solid white + blue,
-     so the toggle state always reads on light glass */
     .cc-round {
-      @apply flex-center cursor-pointer;
+      @apply flex-center cursor-pointer justify-self-center;
       width: 2.85rem;
       height: 2.85rem;
+      padding: 0;
+      flex: none;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.28);
       color: white;
       border: 1px solid rgba(255, 255, 255, 0.25);
       box-shadow: none;
       transition: none;
+      svg {
+        @apply size-5;
+      }
     }
     .cc-round:not(.on) svg,
     .cc-orb:not(.on):not(.on-amber) svg {
@@ -332,7 +335,7 @@ body {
     }
     .cc-player-controls button {
       @apply flex-center text-white cursor-pointer;
-      width: 2.1rem;
+      width: 1rem;
       height: 2.1rem;
       border-radius: 999px;
       background: transparent;
@@ -481,35 +484,409 @@ body {
   }
 
   /* ---------- Control Center dark appearance — ONLY under html.dark ---------- */
+  /* ---------- Control Center dark appearance — ONLY under html.dark ---------- */
   .dark #control-center {
+    /* smoke glass with real depth: wallpaper hue bleeds through,
+     edges catch light, panel lifts off the background */
     .cc-glass {
       background: linear-gradient(
         180deg,
-        rgba(30, 34, 46, 0.62) 0%,
-        rgba(21, 25, 36, 0.55) 100%
+        rgba(48, 54, 70, 0.52) 0%,
+        rgba(22, 25, 34, 0.46) 100%
       );
-      border-color: rgba(255, 255, 255, 0.14);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      backdrop-filter: blur(28px) saturate(180%);
+      border-color: rgba(255, 255, 255, 0.16);
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-        0 16px 36px rgba(0, 0, 0, 0.28);
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+        inset 1px 0 0 rgba(255, 255, 255, 0.05),
+        inset -1px 0 0 rgba(255, 255, 255, 0.05),
+        0 16px 36px rgba(0, 0, 0, 0.45);
+    }
+
+    /* the glass override above out-specificity'd the "on" states —
+     re-assert them here with stronger selectors so they pop again */
+    .cc-round.on,
+    .cc-orb.on {
+      background: rgba(255, 255, 255, 0.92);
+      color: #1287ff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    }
+    .cc-round.on-amber,
+    .cc-orb.on-amber {
+      background: #ffd765;
+      color: #4a3b00;
+    }
+    .cc-focus.on {
+      background: linear-gradient(
+        180deg,
+        rgba(126, 102, 226, 0.78),
+        rgba(95, 70, 181, 0.66)
+      );
+    }
+    .cc-focus.on .cc-focus-icon {
+      background: rgba(183, 164, 255, 0.8);
+    }
+
+    /* off-state controls: faint fill + inner light so they read as buttons,
+     not holes */
+    .cc-round:not(.on) {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+    .cc-orb:not(.on):not(.on-amber) {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .cc-round:not(.on),
+    .cc-orb:not(.on):not(.on-amber) {
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
     }
     .cc-wifi:not(.on) {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.13);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.14);
     }
     .cc-wifi:not(.on) .cc-wifi-icon {
       background: rgba(255, 255, 255, 0.18);
     }
-    .cc-round:not(.on) {
-      background: rgba(255, 255, 255, 0.16);
-      border-color: rgba(255, 255, 255, 0.14);
-    }
     .cc-focus-icon {
       background: rgba(255, 255, 255, 0.2);
     }
+
+    /* slider + player details */
     .cc-slider::before {
       background: rgba(255, 255, 255, 0.22);
+    }
+    .cc-slider-thumb {
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+    }
+    .cc-play {
+      background: rgba(255, 255, 255, 0.18) !important;
+      border-color: rgba(255, 255, 255, 0.22) !important;
+    }
+
+    /* deepen the halo so the panel separates from bright wallpapers */
+    &::before {
+      background: radial-gradient(
+        circle at 50% 0%,
+        rgba(0, 0, 0, 0.55),
+        rgba(0, 0, 0, 0.35) 55%,
+        transparent 80%
+      );
+    }
+  }
+
+  /* ==========================================================
+   GLOBAL DARK MODE — every window follows the CC Appearance orb
+   (html.dark is already toggled by ControlCenter.jsx)
+   ========================================================== */
+  .dark {
+    color-scheme: dark;
+  }
+
+  /* shared window chrome */
+  .dark #window-header {
+    @apply bg-[#25282c] border-gray-700/60 text-gray-400;
+  }
+
+  /* ---------- Finder ---------- */
+  .dark #finder {
+    @apply bg-[#1e1f22] text-gray-200;
+    .sidebar {
+      @apply bg-[#25282c] border-gray-700/60;
+      h3 {
+        @apply text-gray-500;
+      }
+      ul {
+        .active {
+          @apply bg-blue-500/25 text-blue-300;
+        }
+        .not-active {
+          @apply text-gray-300 hover:bg-white/10;
+        }
+      }
+    }
+    .content {
+      @apply bg-[#1e1f22];
+      li p {
+        @apply text-gray-200;
+      }
+    }
+    @media (max-width: 640px) {
+      .content li {
+        @apply active:bg-blue-500/20;
+      }
+    }
+  }
+
+  /* ---------- Photos ---------- */
+  .dark #photos {
+    @apply bg-[#1e1f22];
+    .sidebar {
+      @apply bg-[#25282c] border-gray-700/60;
+      h2 {
+        @apply text-gray-500;
+      }
+      ul li {
+        @apply text-gray-300;
+        &:first-child {
+          @apply bg-blue-500/25 text-blue-300;
+        }
+        p {
+          @apply text-gray-200;
+        }
+        &:first-child p {
+          @apply text-blue-300;
+        }
+      }
+    }
+  }
+
+  /* ---------- Contact ---------- */
+  .dark #contact {
+    @apply bg-[#1e1f22] text-gray-200;
+    h3 {
+      @apply text-gray-100;
+    }
+  }
+
+  /* ---------- Resume (the PDF sheet itself stays paper-white on purpose) ---------- */
+  .dark #resume {
+    @apply bg-[#1e1f22];
+    .resume-download {
+      @apply text-gray-400 hover:bg-white/10 hover:text-gray-100;
+    }
+    .resume-scroll {
+      @apply bg-transparent;
+    }
+    .resume-pages {
+      @apply text-gray-500;
+    }
+    .resume-skeleton {
+      .sk-line {
+        @apply bg-white/10;
+      }
+      .sk-block {
+        @apply bg-white/5;
+      }
+    }
+    .resume-error {
+      @apply text-gray-400;
+      .title {
+        @apply text-gray-200;
+      }
+      .sub {
+        @apply text-gray-500;
+      }
+      .resume-download.solid {
+        @apply bg-white text-gray-900 hover:bg-gray-200;
+      }
+    }
+    @media (max-width: 640px) {
+      background: rgba(17, 19, 22, 0.9);
+      .react-pdf__Page {
+        @apply shadow-black/50 ring-white/10;
+      }
+      .resume-skeleton,
+      .resume-error {
+        @apply bg-[#25282c] ring-white/10;
+      }
+    }
+  }
+
+  /* ---------- Text & Image files ---------- */
+  .dark #txtfile {
+    @apply bg-[#1e1f22] text-gray-200;
+  }
+  .dark #imgfile {
+    @apply bg-[#1e1f22];
+    #window-header p {
+      @apply text-gray-300;
+    }
+    .preview {
+      @apply bg-black/40;
+    }
+  }
+
+  /* ---------- Music ---------- */
+  /* ---------- Music dark mode — every selector outranks its light twin ---------- */
+  .dark #music {
+    @apply bg-[#1e1f22];
+
+    #window-header h2 {
+      @apply text-gray-400;
+    }
+
+    .music-sidebar {
+      @apply bg-[#25282c]/80 border-gray-700/60;
+      .sidebar-group {
+        h3 {
+          @apply text-gray-500;
+        }
+        ul li {
+          @apply text-gray-300 hover:bg-white/10 hover:text-white;
+          &.active {
+            @apply bg-white/10 text-white font-medium;
+          }
+          svg {
+            @apply text-gray-500;
+          }
+          &.active svg {
+            @apply text-gray-200;
+          }
+        }
+      }
+    }
+
+    .music-main {
+      background-color: #1e1f22;
+      background-image: linear-gradient(
+        180deg,
+        rgba(99, 102, 241, 0.1) 0%,
+        rgba(30, 31, 34, 0) 45%
+      );
+      &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.12);
+      }
+    }
+
+    .music-hero {
+      background-image: linear-gradient(
+        180deg,
+        rgba(126, 102, 226, 0.16),
+        transparent
+      );
+      .hero-info {
+        .hero-tag {
+          @apply text-gray-400;
+        }
+        h1 {
+          @apply text-white;
+        }
+        .hero-meta {
+          @apply text-gray-400;
+        }
+        .hero-actions .btn-shuffle {
+          @apply border-gray-600 text-gray-200 hover:bg-white/10;
+        }
+      }
+    }
+
+    .music-tracks {
+      .tracks-header {
+        @apply border-gray-700/60 text-gray-500;
+      }
+      .track-row {
+        @apply text-gray-300 hover:bg-white/[0.06] hover:text-white;
+        &.active {
+          @apply bg-white/[0.08] hover:text-white;
+        }
+        .col-num {
+          @apply text-gray-500;
+        }
+        /* full light path (.col-title included) + .dark => always wins */
+        .col-title {
+          .track-name {
+            @apply text-gray-100;
+          }
+          .track-artist {
+            @apply text-gray-400;
+          }
+        }
+        &.active .col-title .track-name {
+          @apply text-red-400;
+        }
+        .col-album {
+          @apply text-gray-400;
+        }
+        .col-time {
+          @apply text-gray-500;
+        }
+        .col-like {
+          @apply text-gray-500 hover:text-red-400;
+        }
+      }
+    }
+
+    .music-player-bar {
+      @apply border-gray-700/60 bg-[#25282c]/90;
+      .np-info {
+        .np-text {
+          .np-title {
+            @apply text-gray-100;
+          }
+          .np-artist {
+            @apply text-gray-400;
+          }
+        }
+        > svg {
+          @apply text-gray-400 hover:text-red-400;
+        }
+      }
+      .np-controls {
+        .np-buttons {
+          @apply text-gray-400;
+          button {
+            @apply hover:text-white;
+            &.active {
+              @apply text-red-400;
+            }
+          }
+          .play-btn {
+            @apply bg-[#33373b] text-white ring-white/10;
+          }
+        }
+        .np-progress {
+          .time {
+            @apply text-gray-500;
+          }
+          .bar {
+            @apply bg-white/15;
+            .fill {
+              @apply bg-white;
+            }
+          }
+        }
+      }
+      .np-volume {
+        @apply text-gray-400;
+        .vol-bar {
+          @apply bg-white/15;
+          .fill {
+            @apply bg-gray-300;
+          }
+        }
+      }
+    }
+  }
+
+  /* ---------- Mobile nav sheet follows the theme too ---------- */
+  .dark #mobile-nav-menu {
+    @apply bg-[#25282c]/95 ring-white/10;
+    .menu-head .mh-title,
+    .menu-head .mh-hint {
+      @apply text-gray-500;
+    }
+    .link-glyph {
+      @apply from-[#33373b] to-[#25282c] ring-white/10 text-gray-200;
+    }
+    .link-name {
+      @apply text-gray-100;
+    }
+    .link-chev {
+      @apply text-gray-600;
+    }
+    .link-row {
+      @apply active:bg-white/10;
+    }
+    .menu-foot {
+      @apply border-white/10;
+      time {
+        @apply text-gray-400;
+      }
+      .mf-build {
+        @apply text-gray-600;
+      }
     }
   }
 

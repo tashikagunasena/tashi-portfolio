@@ -1,41 +1,38 @@
 import { create } from "zustand";
 
-/* ✏️ Your real library — edit titles/artists freely.
-   ⚠️ "Hell In Heaven" was truncated in your explorer screenshot;
-   if that one 404s, match `src` to the exact filename on disk. */
 const TRACKS = [
   {
     id: 1,
     title: "Hell In Heaven",
-    artist: "Local Library",
+    artist: "Twice",
     album: "My Mix",
     src: "/music/Hell In Heaven.opus",
   },
   {
     id: 2,
     title: "Hwaa",
-    artist: "Local Library",
+    artist: "(G)i-dle",
     album: "My Mix",
     src: "/music/Hwaa.opus",
   },
   {
     id: 3,
     title: "memM",
-    artist: "Local Library",
+    artist: "Purple kiss",
     album: "My Mix",
     src: "/music/memM.opus",
   },
   {
     id: 4,
     title: "Vengeance",
-    artist: "Local Library",
+    artist: "Bibi",
     album: "My Mix",
     src: "/music/Vengeance.opus",
   },
   {
     id: 5,
     title: "Wife",
-    artist: "Local Library",
+    artist: "(G)i-dle",
     album: "My Mix",
     src: "/music/Wife.opus",
   },

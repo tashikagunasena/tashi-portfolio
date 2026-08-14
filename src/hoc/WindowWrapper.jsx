@@ -8,10 +8,6 @@ gsap.registerPlugin(Draggable);
 
 const MOBILE_QUERY = "(max-width: 640px)";
 
-// This app never scrolls the page (html/body/main are overflow:hidden), so a
-// non-zero scroll offset there is always a stray value — and because windows
-// are absolutely positioned inside that container, any stray horizontal scroll
-// silently slides every window off-center. Reset it.
 const clearPageScroll = () => {
   const main = document.querySelector("main");
   if (main) main.scrollLeft = main.scrollTop = 0;
@@ -22,36 +18,68 @@ const clearPageScroll = () => {
 const WindowWrapper = (Component, windowKey) => {
   const Wrapped = (props) => {
     const { focusWindow, windows } = useWindowStore();
-    const { isOpen, zIndex } = windows[windowKey];
+    const { isOpen, zIndex, isMinimized, isMaximized } =
+      windows[windowKey] ?? {};
     const ref = useRef(null);
     const draggableRef = useRef(null);
+    const homeRect = useRef(null);
+    const prev = useRef({ open: false, min: false, max: false });
+
+    const isMobileNow = () => window.matchMedia(MOBILE_QUERY).matches;
+
+    const fullRect = () => ({
+      left: 0,
+      top: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
+
+    const applyFull = (el, animate) => {
+      const r = fullRect();
+      const vars = {
+        x: r.left - el.offsetLeft,
+        y: r.top - el.offsetTop,
+        width: r.width,
+        height: r.height,
+        duration: 0.35,
+        ease: "power3.inOut",
+        onComplete: () => draggableRef.current?.update(),
+      };
+      if (animate) gsap.to(el, vars);
+      else gsap.set(el, vars);
+    };
+
+    const saveHome = (el) => {
+      if (homeRect.current) return;
+      homeRect.current = {
+        x: gsap.getProperty(el, "x"),
+        y: gsap.getProperty(el, "y"),
+        width: el.offsetWidth,
+        height: el.offsetHeight,
+      };
+    };
 
     const placeWindow = () => {
       const el = ref.current;
       if (!el) return;
-
-      // Kill any stray page scroll BEFORE we measure or place — see above.
       clearPageScroll();
-
+      if (isMaximized) {
+        applyFull(el, false);
+        return;
+      }
       gsap.set(el, { x: 0, y: 0 });
-
-      const isMobile = window.matchMedia(MOBILE_QUERY).matches;
       const w = el.offsetWidth;
       const h = el.offsetHeight;
       const left = el.offsetLeft;
       const top = el.offsetTop;
-
       const x = (window.innerWidth - w) / 2 - left;
       let y;
-
-      if (isMobile) {
-        // Center inside the area ABOVE the dock so the dock is never covered.
+      if (isMobileNow()) {
         const dock = document.querySelector("#mobile-dock");
         const dockH = dock ? dock.offsetHeight : 0;
         const stageTop = 12;
         const stageBottom = window.innerHeight - dockH - 8;
         const stageH = Math.max(stageBottom - stageTop, 0);
-
         const centerY = stageTop + (stageH - h) / 2;
         const minY = stageTop - top;
         const maxY = stageBottom - h - top;
@@ -59,24 +87,27 @@ const WindowWrapper = (Component, windowKey) => {
       } else {
         y = Math.max((window.innerHeight - h) / 2, 16) - top;
       }
-
       gsap.set(el, { x, y, transformOrigin: "center center" });
     };
 
-    // --- OPEN/CLOSE ---
-    useLayoutEffect(() => {
-      const el = ref.current;
-      if (!el) return;
+    const minimizeAnim = (el) => {
+      saveHome(el);
+      gsap.to(el, {
+        y: window.innerHeight - el.offsetTop + 40,
+        scale: 0.1,
+        opacity: 0,
+        duration: 0.45,
+        ease: "power2.in",
+        onComplete: () => {
+          el.style.display = "none";
+        },
+      });
+    };
 
-      el.style.display = isOpen ? "" : "none"; // "" so CSS flex layouts live
-      if (!isOpen) return;
-
-      gsap.killTweensOf(el);
-      placeWindow();
-
+    const popIn = (el, fromScale = 0.9) => {
       gsap.fromTo(
         el,
-        { opacity: 0, scale: 0.9 },
+        { opacity: 0, scale: fromScale },
         {
           opacity: 1,
           scale: 1,
@@ -85,40 +116,139 @@ const WindowWrapper = (Component, windowKey) => {
           onComplete: () => draggableRef.current?.update(),
         },
       );
-    }, [isOpen]);
+    };
 
-    // --- STAY CENTERED on mobile when the box changes size ---
+    /* ---------- OPEN / MINIMIZE / MAXIMIZE ---------- */
+    useLayoutEffect(() => {
+      const el = ref.current;
+      if (!el) return;
+      const p = prev.current;
+      gsap.killTweensOf(el);
+
+      if (!isOpen) {
+        el.style.display = "none";
+        el.classList.remove("win-full");
+      } else if (isMinimized) {
+        if (p.min) {
+          el.style.display = "none";
+        } else {
+          el.style.display = "";
+          minimizeAnim(el);
+        }
+      } else {
+        el.style.display = "";
+        const entering = !p.open || p.min;
+
+        if (entering) {
+          if (p.min && homeRect.current) {
+            // restore from minimize
+            if (isMaximized) {
+              el.classList.add("win-full");
+              applyFull(el, false);
+              popIn(el);
+            } else {
+              const h = homeRect.current;
+              gsap.set(el, {
+                x: h.x,
+                y: h.y,
+                width: h.width,
+                height: h.height,
+              });
+              gsap.fromTo(
+                el,
+                { scale: 0.1, opacity: 0 },
+                {
+                  scale: 1,
+                  opacity: 1,
+                  duration: 0.35,
+                  ease: "back.out(1.4)",
+                  onComplete: () => {
+                    gsap.set(el, { width: "", height: "" });
+                    draggableRef.current?.update();
+                  },
+                },
+              );
+            }
+          } else {
+            el.classList.remove("win-full");
+            placeWindow();
+            popIn(el);
+          }
+        } else if (isMaximized !== p.max) {
+          if (isMaximized) {
+            // release the CSS clamps FIRST, then glide to full screen
+            el.classList.add("win-full");
+            saveHome(el);
+            applyFull(el, true);
+          } else if (homeRect.current) {
+            // glide home FIRST, drop the clamps AFTER the tween lands
+            const h = homeRect.current;
+            gsap.to(el, {
+              x: h.x,
+              y: h.y,
+              width: h.width,
+              height: h.height,
+              duration: 0.3,
+              ease: "power3.inOut",
+              onComplete: () => {
+                gsap.set(el, { width: "", height: "" });
+                el.classList.remove("win-full");
+                homeRect.current = null;
+                draggableRef.current?.update();
+              },
+            });
+          } else {
+            el.classList.remove("win-full");
+          }
+        }
+      }
+
+      if (draggableRef.current) {
+        if (isOpen && !isMinimized && isMaximized)
+          draggableRef.current.disable();
+        else draggableRef.current.enable();
+      }
+
+      prev.current = { open: isOpen, min: isMinimized, max: isMaximized };
+    }, [isOpen, isMinimized, isMaximized]);
+
+    /* ---------- stay correct on resize / rotate ---------- */
     useEffect(() => {
       const el = ref.current;
-      if (!el || !isOpen) return;
-
+      if (!el || !isOpen || isMinimized) return;
       let raf = 0;
       const ro = new ResizeObserver(() => {
-        if (!window.matchMedia(MOBILE_QUERY).matches) return;
+        if (isMaximized || !isMobileNow()) return;
         cancelAnimationFrame(raf);
         raf = requestAnimationFrame(placeWindow);
       });
       ro.observe(el);
-
       const onResize = () => {
         gsap.killTweensOf(el);
-        placeWindow();
+        if (isMaximized) {
+          applyFull(el, false);
+        } else {
+          // a resize may have killed a restore tween mid-flight —
+          // clean up so the window can never get stuck half-sized
+          gsap.set(el, { width: "", height: "" });
+          el.classList.remove("win-full");
+          homeRect.current = null;
+          placeWindow();
+        }
         draggableRef.current?.update();
       };
       window.addEventListener("resize", onResize);
-
       return () => {
         cancelAnimationFrame(raf);
         ro.disconnect();
         window.removeEventListener("resize", onResize);
       };
-    }, [isOpen]);
+    }, [isOpen, isMinimized, isMaximized]);
 
-    // --- DRAG: desktop only ---
+    /* ---------- DRAG: desktop only ---------- */
     useGSAP(() => {
       const el = ref.current;
       if (!el) return;
-
       const mm = gsap.matchMedia();
       mm.add("(min-width: 641px)", () => {
         const [instance] = Draggable.create(el, {

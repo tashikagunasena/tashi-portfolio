@@ -17,10 +17,10 @@ const TRACKS = [
   },
   {
     id: 3,
-    title: "memM",
+    title: "memeM",
     artist: "Purple kiss",
     album: "My Mix",
-    src: "/music/memM.opus",
+    src: "/music/memeM.opus",
   },
   {
     id: 4,

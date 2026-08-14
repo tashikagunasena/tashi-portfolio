@@ -8,11 +8,9 @@ const MobileDock = () => {
     if (!app.canOpen) return;
     const appWindow = windows[app.id];
     if (!appWindow) return;
-    if (appWindow.isOpen) {
-      closeWindow(app.id);
-    } else {
-      openWindow(app.id);
-    }
+    // minimized = still running → restore instead of close
+    if (appWindow.isMinimized || !appWindow.isOpen) openWindow(app.id);
+    else closeWindow(app.id);
   };
 
   return (
@@ -20,22 +18,26 @@ const MobileDock = () => {
       <div className="mobile-dock-container">
         {dockApps
           .filter((app) => app.canOpen)
-          .map(({ id, name, icon }) => (
-            <button
-              key={id}
-              type="button"
-              className="mobile-dock-icon"
-              aria-label={name}
-              onClick={() => toggleApp({ id, canOpen: true })}
-            >
-              <img
-                src={`/images/${icon}`}
-                alt={name}
-                loading="lazy"
-                draggable={false}
-              />
-            </button>
-          ))}
+          .map(({ id, name, icon }) => {
+            const isRunning = !!windows[id]?.isOpen;
+            return (
+              <button
+                key={id}
+                type="button"
+                className="mobile-dock-icon relative"
+                aria-label={name}
+                onClick={() => toggleApp({ id, canOpen: true })}
+              >
+                <img
+                  src={`/images/${icon}`}
+                  alt={name}
+                  loading="lazy"
+                  draggable={false}
+                />
+                {isRunning && <span className="dock-dot" aria-hidden="true" />}
+              </button>
+            );
+          })}
       </div>
     </section>
   );

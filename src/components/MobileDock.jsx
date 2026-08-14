@@ -1,8 +1,10 @@
 import { dockApps } from "#constants/index.js";
 import useWindowStore from "#store/window.js";
+import useControlStore from "#store/control.js";
 
 const MobileDock = () => {
   const { openWindow, closeWindow, windows } = useWindowStore();
+  const dark = useControlStore((s) => s.dark);
 
   const toggleApp = (app) => {
     if (!app.canOpen) return;
@@ -18,7 +20,7 @@ const MobileDock = () => {
       <div className="mobile-dock-container">
         {dockApps
           .filter((app) => app.canOpen)
-          .map(({ id, name, icon }) => {
+          .map(({ id, name, icon, darkIcon }) => {
             const isRunning = !!windows[id]?.isOpen;
             return (
               <button
@@ -29,7 +31,7 @@ const MobileDock = () => {
                 onClick={() => toggleApp({ id, canOpen: true })}
               >
                 <img
-                  src={`/images/${icon}`}
+                  src={`/images/${dark && darkIcon ? darkIcon : icon}`}
                   alt={name}
                   loading="lazy"
                   draggable={false}

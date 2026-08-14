@@ -4,9 +4,11 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { dockApps } from "#constants/index.js";
 import useWindowStore from "#store/window.js";
+import useControlStore from "#store/control.js";
 
 const Dock = () => {
   const dockRef = useRef(null);
+  const dark = useControlStore((s) => s.dark);
   // subscribe so the running dots track open/minimized state live
   const windows = useWindowStore((state) => state.windows);
 
@@ -54,7 +56,7 @@ const Dock = () => {
 
   const toggleApp = (app) => {
     if (!app.canOpen) return;
-    // Read fresh state at click time — no subscription, no stale values
+    // Read fresh state at click time — no stale values
     const { windows, openWindow, closeWindow } = useWindowStore.getState();
     const appWindow = windows[app.id];
     if (!appWindow) return;
@@ -66,7 +68,7 @@ const Dock = () => {
   return (
     <section id="dock">
       <div ref={dockRef} className="dock-container">
-        {dockApps.map(({ id, name, icon, canOpen }) => {
+        {dockApps.map(({ id, name, icon, darkIcon, canOpen }) => {
           const appWindow = windows[id];
           const isRunning = canOpen && !!appWindow?.isOpen;
           const isMinimized = !!appWindow?.isMinimized;
@@ -85,7 +87,7 @@ const Dock = () => {
                 onClick={() => toggleApp({ id, canOpen })}
               >
                 <img
-                  src={`/images/${icon}`}
+                  src={`/images/${dark && darkIcon ? darkIcon : icon}`}
                   alt={name}
                   loading="lazy"
                   draggable={false}

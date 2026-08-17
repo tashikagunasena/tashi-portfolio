@@ -7,6 +7,9 @@ import { Draggable } from "gsap/Draggable";
 gsap.registerPlugin(Draggable);
 
 const MOBILE_QUERY = "(max-width: 640px)";
+const RESIZE_DIRS = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
+const MIN_W = 360;
+const MIN_H = 240;
 
 const clearPageScroll = () => {
   const main = document.querySelector("main");
@@ -118,6 +121,55 @@ const WindowWrapper = (Component, windowKey) => {
       );
     };
 
+    /* ---------- RESIZE (desktop only) ---------- */
+    const startResize = (e, dir) => {
+      const el = ref.current;
+      if (!el || isMobileNow() || isMaximized || !isOpen || isMinimized) return;
+      // capture-phase stop so GSAP Draggable never sees this press
+      e.stopPropagation();
+      e.preventDefault();
+      focusWindow(windowKey);
+
+      const handle = e.currentTarget;
+      handle.setPointerCapture(e.pointerId);
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startW = el.offsetWidth;
+      const startH = el.offsetHeight;
+      const gx = gsap.getProperty(el, "x");
+      const gy = gsap.getProperty(el, "y");
+
+      const move = (ev) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        let w = startW;
+        let h = startH;
+        let x = gx;
+        let y = gy;
+        if (dir.includes("e")) w = startW + dx;
+        if (dir.includes("s")) h = startH + dy;
+        if (dir.includes("w")) w = startW - dx;
+        if (dir.includes("n")) h = startH - dy;
+        w = Math.max(MIN_W, Math.min(w, window.innerWidth));
+        h = Math.max(MIN_H, Math.min(h, window.innerHeight));
+        // keep the opposite edge pinned when dragging west/north
+        if (dir.includes("w")) x = gx + (startW - w);
+        if (dir.includes("n")) y = gy + (startH - h);
+        gsap.set(el, { width: w, height: h, x, y });
+      };
+      const up = (ev) => {
+        handle.releasePointerCapture?.(ev.pointerId);
+        handle.removeEventListener("pointermove", move);
+        handle.removeEventListener("pointerup", up);
+        handle.removeEventListener("pointercancel", up);
+        draggableRef.current?.update?.();
+      };
+      handle.addEventListener("pointermove", move);
+      handle.addEventListener("pointerup", up);
+      handle.addEventListener("pointercancel", up);
+    };
+
     /* ---------- OPEN / MINIMIZE / MAXIMIZE ---------- */
     useLayoutEffect(() => {
       const el = ref.current;
@@ -163,7 +215,9 @@ const WindowWrapper = (Component, windowKey) => {
                   duration: 0.35,
                   ease: "back.out(1.4)",
                   onComplete: () => {
-                    gsap.set(el, { width: "", height: "" });
+                    // mobile must fall back to CSS sheet sizes; desktop
+                    // keeps the (possibly user-resized) inline size
+                    if (isMobileNow()) gsap.set(el, { width: "", height: "" });
                     draggableRef.current?.update();
                   },
                 },
@@ -191,7 +245,7 @@ const WindowWrapper = (Component, windowKey) => {
               duration: 0.3,
               ease: "power3.inOut",
               onComplete: () => {
-                gsap.set(el, { width: "", height: "" });
+                if (isMobileNow()) gsap.set(el, { width: "", height: "" });
                 el.classList.remove("win-full");
                 homeRect.current = null;
                 draggableRef.current?.update();
@@ -227,9 +281,7 @@ const WindowWrapper = (Component, windowKey) => {
         gsap.killTweensOf(el);
         if (isMaximized) {
           applyFull(el, false);
-        } else {
-          // a resize may have killed a restore tween mid-flight —
-          // clean up so the window can never get stuck half-sized
+        } else if (isMobileNow()) {
           gsap.set(el, { width: "", height: "" });
           el.classList.remove("win-full");
           homeRect.current = null;
@@ -271,6 +323,21 @@ const WindowWrapper = (Component, windowKey) => {
         className="absolute top-0 left-0"
         onPointerDown={() => focusWindow(windowKey)}
       >
+        {/* Handles render FIRST: several window layouts (#photos, #finder,
+            #safari, #contact.win-full) target their body wrapper with
+            `> div:last-child`, so the handle wrapper must never be the
+            last child of the section. */}
+        {!isMaximized && (
+          <div aria-hidden="true">
+            {RESIZE_DIRS.map((dir) => (
+              <div
+                key={dir}
+                className={`win-rz win-rz-${dir}`}
+                onPointerDownCapture={(e) => startResize(e, dir)}
+              />
+            ))}
+          </div>
+        )}
         <Component {...props} />
       </section>
     );

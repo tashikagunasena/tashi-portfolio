@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { Draggable } from "gsap/Draggable";
 import useWindowStore from "#store/window";
+
+gsap.registerPlugin(Draggable);
 
 /* ✏️ Tweak me --------------------------------------------------------- */
 const CITY = { name: "Colombo", lat: 6.9271, lon: 79.8612 };
@@ -26,7 +31,6 @@ const CalendarWidget = () => {
   const now = dayjs();
   const lead = now.startOf("month").day();
   const days = now.daysInMonth();
-
   return (
     <div className="widget-card cal">
       <p className="cal-month">{now.format("MMMM")}</p>
@@ -54,7 +58,6 @@ const CalendarWidget = () => {
 
 const WeatherWidget = () => {
   const [w, setW] = useState(null);
-
   useEffect(() => {
     let alive = true;
     fetch(
@@ -77,9 +80,7 @@ const WeatherWidget = () => {
       alive = false;
     };
   }, []);
-
   const { label, icon } = describeWeather(w?.code);
-
   return (
     <div className="widget-card weather">
       <p className="w-city">{CITY.name}</p>
@@ -98,7 +99,6 @@ const WeatherWidget = () => {
 
 const PhotoWidget = () => {
   const { openWindow } = useWindowStore();
-
   return (
     <button
       type="button"
@@ -112,18 +112,72 @@ const PhotoWidget = () => {
   );
 };
 
-const Widgets = () => (
-  <div id="widgets">
-    <div className="widget">
-      <CalendarWidget />
+const Widgets = () => {
+  const rootRef = useRef(null);
+
+  /* ---------- desktop-only drag + entrance-animation cleanup ---------- */
+  useGSAP(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const mm = gsap.matchMedia();
+    mm.add("(min-width: 641px)", () => {
+      const cleanups = [];
+      root.querySelectorAll(".widget").forEach((el) => {
+        // 1) retire the entrance animation the moment it finishes…
+        const onAnimEnd = (e) => {
+          if (e.target === el) el.style.animation = "none";
+        };
+
+        // 2) …or the moment it's pressed, BEFORE Draggable measures.
+        //    A press mid-pop used to bake the in-flight translateY into
+        //    inline styles, and fill-mode kept it → the "drop" on click.
+        //    Only runs once (first press); later presses keep drag offsets.
+        const onPointerDown = () => {
+          if (el.style.animation !== "none") {
+            el.style.animation = "none";
+            gsap.set(el, { clearProps: "transform" });
+          }
+        };
+
+        // register BEFORE Draggable.create so this runs first on press
+        el.addEventListener("animationend", onAnimEnd);
+        el.addEventListener("pointerdown", onPointerDown);
+
+        const [instance] = Draggable.create(el, {
+          type: "x,y",
+          onPress: () => gsap.killTweensOf(el),
+        });
+
+        // double-click snaps the widget back to its grid slot
+        const onDblClick = () =>
+          gsap.to(el, { x: 0, y: 0, duration: 0.35, ease: "power2.out" });
+        el.addEventListener("dblclick", onDblClick);
+
+        cleanups.push(() => {
+          el.removeEventListener("animationend", onAnimEnd);
+          el.removeEventListener("pointerdown", onPointerDown);
+          el.removeEventListener("dblclick", onDblClick);
+          instance.kill();
+        });
+      });
+      return () => cleanups.forEach((fn) => fn());
+    });
+    return () => mm.revert();
+  }, []);
+
+  return (
+    <div id="widgets" ref={rootRef}>
+      <div className="widget">
+        <CalendarWidget />
+      </div>
+      <div className="widget">
+        <WeatherWidget />
+      </div>
+      <div className="widget">
+        <PhotoWidget />
+      </div>
     </div>
-    <div className="widget">
-      <WeatherWidget />
-    </div>
-    <div className="widget">
-      <PhotoWidget />
-    </div>
-  </div>
-);
+  );
+};
 
 export default Widgets;

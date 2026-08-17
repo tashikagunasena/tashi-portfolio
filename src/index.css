@@ -28,6 +28,10 @@ body {
   @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
 }
 
+/* ================================================================
+ * 01. BASE LAYOUT, IMPORTS & UTILITIES
+ * ================================================================ */
+
 @layer base {
   main {
     @apply w-dvw h-dvh overflow-hidden max-sm:flex max-sm:flex-col;
@@ -97,7 +101,63 @@ body {
   }
 }
 
+/* ================================================================
+ * 02. SHARED COMPONENTS & WINDOW CHROME
+ * ================================================================ */
+
 @layer components {
+  /* ---------- window resize handles: desktop only ---------- */
+  .win-rz {
+    @apply absolute z-30 max-sm:hidden;
+    touch-action: none;
+  }
+  .win-rz-n {
+    @apply top-0 inset-x-0 h-1.5 cursor-ns-resize;
+  }
+  .win-rz-s {
+    @apply bottom-0 inset-x-0 h-1.5 cursor-ns-resize;
+  }
+  .win-rz-e {
+    @apply right-0 inset-y-0 w-1.5 cursor-ew-resize;
+  }
+  .win-rz-w {
+    @apply left-0 inset-y-0 w-1.5 cursor-ew-resize;
+  }
+  .win-rz-nw {
+    @apply top-0 left-0 size-3 cursor-nwse-resize;
+  }
+  .win-rz-ne {
+    @apply top-0 right-0 size-3 cursor-nesw-resize;
+  }
+  .win-rz-sw {
+    @apply bottom-0 left-0 size-3 cursor-nesw-resize;
+  }
+  .win-rz-se {
+    @apply bottom-0 right-0 size-3 cursor-nwse-resize;
+  }
+
+  /* ---------- let resized windows fill their new height ----------
+   Most windows are already flex-col, so their bodies stretch for free.
+   Finder & Safari need these two hints: */
+  #finder,
+  #safari {
+    @apply flex flex-col;
+  }
+  #finder > div:last-child,
+  #safari > div:last-child {
+    @apply flex-1 min-h-0;
+  }
+
+  /* maximized Finder: the file grid owns the full width,
+   so there's no dead zone on the right in either theme */
+  #finder.win-full .content {
+    @apply max-w-none;
+  }
+  /* Safari's blog keeps its 24rem cap at natural size, but fills the
+   window once an inline height exists (resized or maximized) */
+  #safari[style*="height"] .blog {
+    max-height: none;
+  }
   .icon {
     @apply p-1 hover:bg-gray-200 rounded hover:cursor-default;
   }
@@ -111,6 +171,10 @@ body {
   #mobile-nav-toggle svg {
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
   }
+
+  /* ================================================================
+ * 03. CONTROL CENTER
+ * ================================================================ */
 
   /* ---------- macOS 26-style Control Center ---------- */
   #cc-toggle-mobile {
@@ -485,7 +549,6 @@ body {
   }
 
   /* ---------- Control Center dark appearance — ONLY under html.dark ---------- */
-  /* ---------- Control Center dark appearance — ONLY under html.dark ---------- */
   .dark #control-center {
     /* smoke glass with real depth: wallpaper hue bleeds through,
      edges catch light, panel lifts off the background */
@@ -576,6 +639,10 @@ body {
       );
     }
   }
+
+  /* ================================================================
+ * 04. GLOBAL DARK-MODE WINDOW THEMES
+ * ================================================================ */
 
   /* ==========================================================
    GLOBAL DARK MODE — every window follows the CC Appearance orb
@@ -891,6 +958,10 @@ body {
     }
   }
 
+  /* ================================================================
+ * 05. MOBILE NAVIGATION & HOME
+ * ================================================================ */
+
   /* ---------- Mobile menu: portal'd sheet + dimming backdrop ----------
      Both live at <body>, so they escape the nav's backdrop-filter
      stacking context and always sit above the home pane. */
@@ -1205,6 +1276,10 @@ body {
     }
   }
 
+  /* ================================================================
+ * 06. COMMON WINDOW STYLES
+ * ================================================================ */
+
   #window-header {
     @apply flex items-center justify-between px-4 py-3 rounded-t-lg bg-gray-50 border-b border-gray-200 select-none text-sm text-gray-400;
     @media (max-width: 640px) {
@@ -1227,6 +1302,10 @@ body {
       padding-top: calc(env(safe-area-inset-top) + 0.5rem);
     }
   }
+
+  /* ================================================================
+ * 07. TERMINAL
+ * ================================================================ */
 
   #terminal {
     @apply absolute w-2xl h-[32rem] shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden flex flex-col;
@@ -1377,6 +1456,10 @@ body {
     }
   }
 
+  /* ================================================================
+ * 08. CONTACT
+ * ================================================================ */
+
   #contact {
     @apply max-w-2xl absolute bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
     h2 {
@@ -1420,6 +1503,10 @@ body {
       @apply flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-center text-center;
     }
   }
+
+  /* ================================================================
+ * 09. PHOTOS
+ * ================================================================ */
 
   #photos {
     @apply max-w-3xl absolute bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
@@ -1524,6 +1611,10 @@ body {
     }
   }
 
+  /* ================================================================
+ * 10. RESUME / PDF VIEWER
+ * ================================================================ */
+
   #resume {
     @apply w-fit h-fit absolute bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden;
 
@@ -1625,6 +1716,10 @@ body {
       }
     }
   }
+
+  /* ================================================================
+ * 11. FINDER & FILE VIEWERS
+ * ================================================================ */
 
   #finder {
     @apply absolute w-3xl bg-white shadow-2xl drop-shadow-2xl overflow-hidden rounded-xl;
@@ -1781,6 +1876,10 @@ body {
       }
     }
   }
+  /* ================================================================
+ * 12. MUSIC
+ * ================================================================ */
+
   #music {
     @apply absolute w-4xl h-[36rem] bg-white shadow-2xl drop-shadow-2xl rounded-xl overflow-hidden flex flex-col;
 
@@ -2111,12 +2210,16 @@ body {
 
 /* ---------- Desktop widgets: right side, macOS-style 2-up grid ---------- */
 /* ---------- Desktop widgets: compact 2-up grid ---------- */
+/* ================================================================
+ * 13. HOME WIDGETS
+ * ================================================================ */
+
 #widgets {
   @apply absolute right-3 top-5 z-10 grid w-[15rem] grid-cols-2 gap-2 select-none max-sm:hidden;
 
   .widget {
     @apply cursor-grab active:cursor-grabbing min-w-0;
-    animation: widget-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation: widget-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
   }
   .widget:nth-child(2) {
     animation-delay: 0.08s;
@@ -2178,6 +2281,31 @@ body {
     }
   }
 }
+
+/* ---------- Widgets follow the CC dark theme too ---------- */
+.dark #widgets .widget-card {
+  @apply ring-white/10 shadow-black/40;
+}
+/* calendar: smoke-glass card instead of paper-white */
+.dark #widgets .cal {
+  @apply bg-[#25282c]/95;
+  .cal-month {
+    @apply text-red-400;
+  }
+  .cal-dow {
+    @apply text-gray-500;
+  }
+  .cal-date {
+    @apply text-gray-300;
+  }
+  .cal-date.today {
+    @apply bg-red-500 font-semibold text-white;
+  }
+}
+
+/* ================================================================
+ * 14. ANIMATIONS & RESPONSIVE INTERACTIONS
+ * ================================================================ */
 
 /* keep these only if they're not already in your file from last time */
 @keyframes widget-pop {

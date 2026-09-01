@@ -27,6 +27,11 @@ const isCCIcon = ({ id, img }) =>
   ) ||
   id === navIcons[navIcons.length - 1]?.id;
 
+/* the menu-bar wifi icon — matches whichever nav icon's id or file
+   name says "wifi". Rename the key here if yours is named differently. */
+const isWifiIcon = ({ id, img }) =>
+  [String(id), String(img ?? "")].some((s) => s.toLowerCase().includes("wifi"));
+
 const LiveTime = ({ format, className }) => {
   const [now, setNow] = useState(() => dayjs());
   useEffect(() => {
@@ -115,10 +120,45 @@ const Chevron = () => (
   </svg>
 );
 
+/* menu-bar slot that pops in / folds out instead of hard-unmounting */
+const WifiSlot = ({ show, onClick, children }) => {
+  const [mounted, setMounted] = useState(show);
+  const [leaving, setLeaving] = useState(false);
+
+  if (show && !mounted) {
+    setMounted(true);
+    setLeaving(false);
+  }
+  if (!show && mounted && !leaving) {
+    setLeaving(true);
+  }
+
+  useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(() => {
+      setMounted(false);
+      setLeaving(false);
+    }, 220);
+    return () => clearTimeout(t);
+  }, [leaving]);
+
+  if (!mounted) return null;
+  return (
+    <li
+      className={`nav-wifi ${leaving ? "nav-wifi-out" : "nav-wifi-in"}`}
+      onClick={onClick}
+    >
+      {children}
+    </li>
+  );
+};
+
 const Navbar = () => {
   const { openWindow } = useWindowStore();
   const ccOpen = useControlStore((s) => s.open);
   const setCCOpen = useControlStore((s) => s.setOpen);
+  const wifi = useControlStore((s) => s.wifi);
+  const toggle = useControlStore((s) => s.toggle);
   const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef(null);
   const [anchorTop, setAnchorTop] = useState(0);
@@ -166,19 +206,33 @@ const Navbar = () => {
 
       <div className="nav-right">
         <ul>
-          {navIcons.map((icon) => (
-            <li
-              key={icon.id}
-              className="cursor-pointer"
-              onClick={() => handleNavIcon(icon)}
-            >
-              <img
-                src={icon.img}
-                className="icon-hover"
-                alt={`icon-${icon.id}`}
-              />
-            </li>
-          ))}
+          {navIcons.map((icon) =>
+            isWifiIcon(icon) ? (
+              <WifiSlot
+                key={icon.id}
+                show={wifi}
+                onClick={() => toggle("wifi")}
+              >
+                <img
+                  src={icon.img}
+                  className="icon-hover"
+                  alt={`icon-${icon.id}`}
+                />
+              </WifiSlot>
+            ) : (
+              <li
+                key={icon.id}
+                className="cursor-pointer"
+                onClick={() => handleNavIcon(icon)}
+              >
+                <img
+                  src={icon.img}
+                  className="icon-hover"
+                  alt={`icon-${icon.id}`}
+                />
+              </li>
+            ),
+          )}
         </ul>
         <LiveTime format="ddd MMM D · h:mm A" />
       </div>
@@ -196,14 +250,9 @@ const Navbar = () => {
             src={ccIcon?.img}
             alt=""
             draggable={false}
-            className="size-6"
-            style={{
-              filter:
-                "brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.45))",
-            }}
+            className="size-6 nav-icon-img"
           />
         </button>
-
         <button
           id="mobile-nav-toggle"
           aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -282,7 +331,6 @@ const Navbar = () => {
           </>,
           document.body,
         )}
-
       <ControlCenter />
     </nav>
   );
